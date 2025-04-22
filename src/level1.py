@@ -1,8 +1,23 @@
+import arcade
+from pyglet.math import Mat4, Vec3
+def get_Enemies(program):
+    enemies = [
+        {
+            "name": "enemy1_001",
+            "program": program,
+            "id": 10,
+            "buffer_data": Vec3(0, -2, -20),
+            "rotation": Vec3(0, 0, 0),
+            "scale": Vec3(0.2, 0.2, 0.2),
+            "material": (1.0, 0.7, 0.8),
+        }
+    ]
+    return enemies
 def get_walls(program):
     uv = 2
     walls = [
         {
-            "name": "wall1",
+            "name": "wall_001",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -14,7 +29,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall2",
+            "name": "wall_002",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -26,7 +41,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall3",
+            "name": "wall_003",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -38,7 +53,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall4",
+            "name": "wall_004",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -50,7 +65,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall5",
+            "name": "wall_005",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -62,7 +77,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall6",
+            "name": "wall_006",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -74,7 +89,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall7",
+            "name": "wall_007",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -86,7 +101,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall8",
+            "name": "wall_008",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -98,7 +113,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall9",
+            "name": "wall_009",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -110,7 +125,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall10",
+            "name": "wall_010",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -122,7 +137,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall11",
+            "name": "wall_011",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -134,7 +149,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall12",
+            "name": "wall_012",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -146,7 +161,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall13",
+            "name": "wall_013",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -158,7 +173,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall14",
+            "name": "wall_014",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -170,7 +185,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall15",
+            "name": "wall_015",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -182,7 +197,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall16",
+            "name": "wall_016",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -194,7 +209,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall17",
+            "name": "wall_017",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -206,7 +221,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall18",
+            "name": "wall_018",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -219,7 +234,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall19",
+            "name": "wall_019",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -232,7 +247,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall20",
+            "name": "wall_020",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -245,7 +260,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall21",
+            "name": "wall_021",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -257,7 +272,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall22",
+            "name": "wall_022",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -269,7 +284,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall23",
+            "name": "wall_023",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -281,7 +296,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall24",
+            "name": "wall_024",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -293,7 +308,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall25",
+            "name": "wall_025",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -305,7 +320,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall26",
+            "name": "wall_026",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -317,7 +332,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall27",
+            "name": "wall_027",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [
@@ -329,7 +344,7 @@ def get_walls(program):
             ],
         },
         {
-            "name": "wall28",
+            "name": "wall_028",
             "program": program,  # Use the passed program
             "texture": 1,
             "buffer_data": [

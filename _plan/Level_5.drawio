@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0" version="26.2.14">
   <diagram name="Page-1" id="TsTmCIDk3tWzDRQc0X-c">
-    <mxGraphModel dx="1563" dy="1010" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="2400" math="0" shadow="0">
+    <mxGraphModel dx="4049" dy="2309" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="2400" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -138,14 +138,14 @@
         <mxCell id="8fbumcTLivBWFZjXv-fX-40" value="Decrease player hp by enemy dmg" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="490.64" y="2340" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="8fbumcTLivBWFZjXv-fX-41" value="True" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="8fbumcTLivBWFZjXv-fX-42" target="8fbumcTLivBWFZjXv-fX-43" edge="1">
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-14" value="True" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="8fbumcTLivBWFZjXv-fX-42" target="4GB0Vkhl56WG-VM8eiVn-13">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-42" value="Did the player enter the Exit?" style="rhombus;whiteSpace=wrap;html=1;rounded=1;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
           <mxGeometry x="640.64" y="1760" width="140" height="120" as="geometry" />
         </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-43" value="Exit level and proceed to next." style="whiteSpace=wrap;html=1;rounded=1;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
-          <mxGeometry x="650.64" y="1920" width="120" height="60" as="geometry" />
+          <mxGeometry x="620" y="2200" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-44" value="True" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="8fbumcTLivBWFZjXv-fX-45" target="8fbumcTLivBWFZjXv-fX-47" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -235,7 +235,11 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-73" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="8fbumcTLivBWFZjXv-fX-75" target="8fbumcTLivBWFZjXv-fX-84" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="2070" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-74" value="False" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="8fbumcTLivBWFZjXv-fX-73" vertex="1" connectable="0">
           <mxGeometry x="-0.4304" y="1" relative="1" as="geometry">
@@ -270,7 +274,7 @@
           <mxGeometry x="1130.6399999999999" y="2145" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-84" value="Play empty gun animation" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="650.64" y="2100" width="120" height="60" as="geometry" />
+          <mxGeometry x="650.64" y="2450" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-85" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="8fbumcTLivBWFZjXv-fX-86" target="8fbumcTLivBWFZjXv-fX-34" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -730,23 +734,56 @@
         <mxCell id="_zps_HPTE94kLi5EZ5XD-106" value="Similar to Enemy 2 but has more hp and faster fire rate, (elite)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="1441.64" y="1090" width="199" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="fJzs2es44qmlwQs93ijn-1" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+        <mxCell id="fJzs2es44qmlwQs93ijn-1" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="1" vertex="1">
           <mxGeometry x="740.64" y="110" width="40" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="fJzs2es44qmlwQs93ijn-2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+        <mxCell id="fJzs2es44qmlwQs93ijn-2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="1" vertex="1">
           <mxGeometry x="805.64" y="140" width="40" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="fJzs2es44qmlwQs93ijn-3" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+        <mxCell id="fJzs2es44qmlwQs93ijn-3" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="1" vertex="1">
           <mxGeometry x="720" y="998.5" width="40" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="fJzs2es44qmlwQs93ijn-4" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="1">
+        <mxCell id="fJzs2es44qmlwQs93ijn-4" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" parent="1" vertex="1">
           <mxGeometry x="810.64" y="980" width="40" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="fJzs2es44qmlwQs93ijn-5" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=light-dark(#6A00FF,#FFF963);fontColor=#ffffff;strokeColor=light-dark(#3700CC,#FF0F0F);" vertex="1" parent="1">
+        <mxCell id="fJzs2es44qmlwQs93ijn-5" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=light-dark(#6A00FF,#FFF963);fontColor=#ffffff;strokeColor=light-dark(#3700CC,#FF0F0F);" parent="1" vertex="1">
           <mxGeometry x="1120.6399999999999" y="850" width="40" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="fJzs2es44qmlwQs93ijn-6" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=light-dark(#6A00FF,#FFF963);fontColor=#ffffff;strokeColor=light-dark(#3700CC,#FF0F0F);" vertex="1" parent="1">
+        <mxCell id="fJzs2es44qmlwQs93ijn-6" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=light-dark(#6A00FF,#FFF963);fontColor=#ffffff;strokeColor=light-dark(#3700CC,#FF0F0F);" parent="1" vertex="1">
           <mxGeometry x="1080.6399999999999" y="210" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-4" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="4GB0Vkhl56WG-VM8eiVn-2" target="4GB0Vkhl56WG-VM8eiVn-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-2" value="Set up Arena based combat:" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1335.03" y="1200" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-9" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="4GB0Vkhl56WG-VM8eiVn-3" target="4GB0Vkhl56WG-VM8eiVn-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-3" value="Did all enemies die?" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1342.55" y="1290" width="104.97" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-5" value="Wave += 1&amp;nbsp;&lt;div&gt;spawn enemies&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1520.645" y="1425" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-10" value="False" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="4GB0Vkhl56WG-VM8eiVn-8" target="4GB0Vkhl56WG-VM8eiVn-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-12" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="4GB0Vkhl56WG-VM8eiVn-8" target="4GB0Vkhl56WG-VM8eiVn-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-8" value="&lt;div&gt;Is it last wave?&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1342.55" y="1410" width="104.97" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-11" value="Open exit" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1335.0349999999999" y="1540" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-15" value="True" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="4GB0Vkhl56WG-VM8eiVn-13" target="8fbumcTLivBWFZjXv-fX-43">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4GB0Vkhl56WG-VM8eiVn-13" value="Is the exit open?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="624.5" y="1970" width="111" height="105" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

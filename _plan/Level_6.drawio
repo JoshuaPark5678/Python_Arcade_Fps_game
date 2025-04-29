@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0" version="26.2.14">
   <diagram name="Page-1" id="kohgC9TngvywwdrcuSMo">
-    <mxGraphModel dx="1571" dy="1008" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2834" dy="1616" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -106,6 +106,13 @@
         </mxCell>
         <mxCell id="ygfuFJU3aSnGuB_CsWcF-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="ygfuFJU3aSnGuB_CsWcF-31" target="ygfuFJU3aSnGuB_CsWcF-155" edge="1">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-10" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="ygfuFJU3aSnGuB_CsWcF-31" target="X6t_s04mcOXUVhYUVOr6-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1380" y="2000" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="ygfuFJU3aSnGuB_CsWcF-31" value="On update&amp;nbsp;&lt;div&gt;(Treat like it returns to this point when ends)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="878.0799999999999" y="2000" width="150" height="60" as="geometry" />
@@ -744,17 +751,44 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="CCWc090lP2qEgAQoS9id-3" value="2nd Phase" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;width=44;endSize=10.902857142857142;" edge="1" parent="1">
+        <mxCell id="CCWc090lP2qEgAQoS9id-3" value="2nd Phase" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;width=44;endSize=10.902857142857142;" parent="1" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="1013.08" y="920" as="sourcePoint" />
             <mxPoint x="863.08" y="920" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="CCWc090lP2qEgAQoS9id-4" value="3rd Phase!" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;width=44;endSize=10.902857142857142;" edge="1" parent="1">
+        <mxCell id="CCWc090lP2qEgAQoS9id-4" value="3rd Phase!" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;width=44;endSize=10.902857142857142;" parent="1" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="1216.1599999999999" y="940" as="sourcePoint" />
             <mxPoint x="1368.08" y="940.32" as="targetPoint" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-1" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="X6t_s04mcOXUVhYUVOr6-2" target="X6t_s04mcOXUVhYUVOr6-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-2" value="Button Machanics" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1325.48" y="1780" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-3" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="X6t_s04mcOXUVhYUVOr6-4" target="X6t_s04mcOXUVhYUVOr6-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-4" value="Buttons are stored in a list of pairs (one button, one door)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="1670" width="160.96" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-5" value="True" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="X6t_s04mcOXUVhYUVOr6-6" target="X6t_s04mcOXUVhYUVOr6-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-6" value="Did a &amp;lt;Button&amp;gt;&lt;div&gt;get pressed&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1522.0800000000002" y="1660" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-7" value="False" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="X6t_s04mcOXUVhYUVOr6-8" target="X6t_s04mcOXUVhYUVOr6-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-8" value="Was the button already pressed?" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1521.44" y="1790" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="X6t_s04mcOXUVhYUVOr6-9" value="Open corresponding door in level and note that this button was pressed." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1537.0800000000002" y="1930" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

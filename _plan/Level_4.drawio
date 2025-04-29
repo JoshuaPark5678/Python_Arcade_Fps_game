@@ -115,6 +115,13 @@
             </Array>
           </mxGeometry>
         </mxCell>
+        <mxCell id="Yviku8BddQFTuDJvzTGC-16" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="8fbumcTLivBWFZjXv-fX-30" target="Yviku8BddQFTuDJvzTGC-12">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1730" y="1690" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
         <mxCell id="8fbumcTLivBWFZjXv-fX-30" value="On update&amp;nbsp;&lt;div&gt;(Treat like it returns to this point when ends)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="795.64" y="1630" width="150" height="60" as="geometry" />
         </mxCell>
@@ -742,6 +749,21 @@
         </mxCell>
         <mxCell id="Yviku8BddQFTuDJvzTGC-9" value="Open corresponding door in level and note that this button was pressed." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="1510.5600000000002" y="1490" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Yviku8BddQFTuDJvzTGC-11" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="Yviku8BddQFTuDJvzTGC-12" target="Yviku8BddQFTuDJvzTGC-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yviku8BddQFTuDJvzTGC-12" value="Green door Mechanics" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1665.48" y="1350" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Yviku8BddQFTuDJvzTGC-13" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="Yviku8BddQFTuDJvzTGC-14" target="Yviku8BddQFTuDJvzTGC-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Yviku8BddQFTuDJvzTGC-14" value="Did all enemies die?" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1862.0800000000004" y="1230" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Yviku8BddQFTuDJvzTGC-15" value="Open green door." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1877.0800000000004" y="1380" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

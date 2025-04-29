@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0" version="26.2.14">
   <diagram name="Page-1" id="2xfqD6G6PX9wo0LNrm-w">
-    <mxGraphModel dx="3105" dy="2500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="2400" math="0" shadow="0">
+    <mxGraphModel dx="1386" dy="951" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="2400" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -112,6 +112,14 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1350" y="1630" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="AHHrEbp7xVRI3c2H2Wv2-28" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="4vGkz7nxXuu8QmF7Kftd-30">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1740.48" y="1410" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1820" y="1710" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -716,6 +724,21 @@
         </mxCell>
         <mxCell id="AHHrEbp7xVRI3c2H2Wv2-14" value="Open corresponding door in level and note that this button was pressed." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="1510.5600000000002" y="1490" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="AHHrEbp7xVRI3c2H2Wv2-29" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="AHHrEbp7xVRI3c2H2Wv2-30" target="AHHrEbp7xVRI3c2H2Wv2-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AHHrEbp7xVRI3c2H2Wv2-30" value="Green door Mechanics" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1665.48" y="1350" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="AHHrEbp7xVRI3c2H2Wv2-31" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="AHHrEbp7xVRI3c2H2Wv2-32" target="AHHrEbp7xVRI3c2H2Wv2-33">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AHHrEbp7xVRI3c2H2Wv2-32" value="Did all enemies die?" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1862.0800000000004" y="1230" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="AHHrEbp7xVRI3c2H2Wv2-33" value="Open green door." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1877.0800000000004" y="1380" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

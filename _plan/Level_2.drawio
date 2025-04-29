@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0" version="26.2.14">
   <diagram name="Page-1" id="39j0aMAwN46x6k9twVRf">
-    <mxGraphModel dx="2834" dy="1616" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="2400" math="0" shadow="0">
+    <mxGraphModel dx="1889" dy="1077" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="2400" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -738,32 +738,20 @@
         <mxCell id="929An35CtNsn8mJ7KxwY-9" value="Open corresponding door in level and note that this button was pressed." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="1487.7200000000003" y="1500" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-11" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="929An35CtNsn8mJ7KxwY-12" target="929An35CtNsn8mJ7KxwY-14">
+        <mxCell id="929An35CtNsn8mJ7KxwY-21" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="929An35CtNsn8mJ7KxwY-12" target="929An35CtNsn8mJ7KxwY-16">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="929An35CtNsn8mJ7KxwY-12" value="Green door Mechanics" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="1665.48" y="1350" width="150" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-13" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="929An35CtNsn8mJ7KxwY-14" target="929An35CtNsn8mJ7KxwY-16">
+        <mxCell id="929An35CtNsn8mJ7KxwY-22" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="929An35CtNsn8mJ7KxwY-16" target="929An35CtNsn8mJ7KxwY-19">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-14" value="Buttons are stored in a list of pairs (one button, one door)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="1660" y="1240" width="160.96" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-15" value="True" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="929An35CtNsn8mJ7KxwY-16" target="929An35CtNsn8mJ7KxwY-18">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-16" value="Did a &amp;lt;Button&amp;gt;&lt;div&gt;get pressed&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+        <mxCell id="929An35CtNsn8mJ7KxwY-16" value="Did all enemies die?" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="1862.0800000000004" y="1230" width="150" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-17" value="False" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" edge="1" parent="1" source="929An35CtNsn8mJ7KxwY-18" target="929An35CtNsn8mJ7KxwY-19">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-18" value="Was the button already pressed?" style="rhombus;whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="1861.44" y="1360" width="150" height="100" as="geometry" />
-        </mxCell>
-        <mxCell id="929An35CtNsn8mJ7KxwY-19" value="Open corresponding door in level and note that this button was pressed." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="1877.0800000000004" y="1500" width="120" height="60" as="geometry" />
+        <mxCell id="929An35CtNsn8mJ7KxwY-19" value="Open green door." style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1877.0800000000004" y="1380" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

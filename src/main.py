@@ -7,19 +7,29 @@ from arcade.gl import BufferDescription
 import math
 from pygltflib import GLTF2
 import time
+import os
 
 # Import the necessary files
 import level1
 import gltf_utils
 
 # Constants for screen dimensions
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 
 
 class Game(arcade.Window):
     def __init__(self):
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Simple 3D Plane", resizable=False)
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT,
+                         "Simple 3D Plane", resizable=True, vsync=True)
+        # FILE LOCATION
+        self.file_location = os.path.abspath(__file__)
+        # SCREEN DIMENSIONS
+        self.screen_width = SCREEN_WIDTH
+        self.screen_height = SCREEN_HEIGHT
+        print(self.file_location)
+        # Enable Timings for FPS
+        arcade.enable_timings()
         # Set the window's position on the screen
         self.set_location(50, 50)  # X=100, Y=100
         # Enable depth testing
@@ -147,13 +157,13 @@ class Game(arcade.Window):
         """
 
         ground_texture = arcade.load_texture(
-            "Python\Arcade/arcade-3d-game/texture\default.png"
+            "Python_Arcade_Fps_game/texture\default.png"
         )
         wall_texture = arcade.load_texture(
-            "Python/Arcade/arcade-3d-game/texture/default2.png"
+            "Python_Arcade_Fps_game/texture/default2.png"
         )
         cat_texture = arcade.load_texture(
-            "Python\Arcade/arcade-3d-game/texture\cat1.jpg"
+            "Python_Arcade_Fps_game/texture\cat1.jpg"
         )
         self.texture1 = self.ctx.texture(
             size=(ground_texture.width, ground_texture.height),
@@ -245,6 +255,8 @@ class Game(arcade.Window):
             "left": False,
             "right": False,
         }
+        # Money
+        self.player_currency = 0  # Player's currency
 
         # Movement variables
         self.is_on_ground = False  # Flag to track if the player is on the ground
@@ -272,11 +284,11 @@ class Game(arcade.Window):
         self.time_since_last_frame = 0  # Time accumulator for frame updates
         self.weapon_anim_running = False  # Flag to control animation
         for i in range(1, 16):  # Assuming the images are named 0001.png to 0015.png
-            texture_path = f"Python/Arcade/arcade-3d-game/model_ui/revolver/{i:04d}.png"
+            texture_path = f"Python_Arcade_Fps_game/model_ui/revolver/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
 
-        enemy1_path = ["Python\Arcade/arcade-3d-game\models\crazy_boy.gltf",
-                       "Python\Arcade/arcade-3d-game\models\crazy_boy.bin"]
+        enemy1_path = ["Python_Arcade_Fps_game\models\crazy_boy.gltf",
+                       "Python_Arcade_Fps_game\models\crazy_boy.bin"]
         # Initial position of the .obj model
         self.animation_time = 0  # Track the animation time
         self.enemies = level1.get_Enemies(self.GLTF_program)
@@ -286,7 +298,6 @@ class Game(arcade.Window):
             self.objects.append(enemy)
             enemy["geometry"] = gltf_utils.load_gltf(
                 self, enemy1_path[0], enemy1_path[1], scale=Vec3(0.3, 0.3, 0.3))
-            gltf_utils.get_anim(self, enemy1_path[0], enemy1_path[1])
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
@@ -378,69 +389,99 @@ class Game(arcade.Window):
                     # Render the geometry
                     enemy_geometry["geometry"].render(obj["program"])
 
-        # ==========================UI========================= #
-        current_texture = self.revolver_textures[self.current_frame]
-        arcade.draw_texture_rectangle(
-            SCREEN_WIDTH // 2 + 20,  # X position (center of the screen)
-            SCREEN_HEIGHT // 2 - 80,  # Y position (center of the screen)
-            SCREEN_WIDTH,  # Width of the texture
-            SCREEN_HEIGHT,  # Height of the texture
-            current_texture  # The texture to draw
-        )
+        # draw UI
+        self.draw_UI()
 
-        # draw crosshair that has inverse color from the background
-        # Capture the screen and get the color at the center
-        screen_image = arcade.get_image()
-        center_x = SCREEN_WIDTH // 2
-        center_y = SCREEN_HEIGHT // 2
-        pixel_color = screen_image.getpixel(
-            (center_x, center_y))  # Get the color at the center
+    def draw_UI(self):
+        try:
+            # ==========================UI========================= #
+            # =======================WEAPON======================== #
+            current_texture = self.revolver_textures[self.current_frame]
 
-        # Calculate the inverse color
-        inverse_color = (
-            255 - pixel_color[0], 255 - pixel_color[1], 255 - pixel_color[2])
+            arcade.draw_texture_rectangle(
+                # X position (center of the screen)
+                self.screen_width // 2 + 20,
+                # Y position (center of the screen)
+                self.screen_height // 2 - 80,
+                self.screen_width,  # Width of the texture
+                self.screen_height + 20,  # Height of the texture
+                current_texture  # The texture to draw
+            )
+            # ======================CROSSHAIR====================== #
 
-        # Draw the crosshair
-        crosshair_size = 5  # Size of the crosshair
-        line_thickness = 2  # Thickness of the crosshair lines
+            # draw crosshair that has inverse color from the background
+            # Capture the screen and get the color at the center
+            screen_image = arcade.get_image()
+            center_x = self.screen_width // 2
+            center_y = self.screen_height // 2
+            pixel_color = screen_image.getpixel(
+                (center_x, center_y))  # Get the color at the center
 
-        # Horizontal line
-        arcade.draw_line(
-            center_x - crosshair_size, center_y,
-            center_x + crosshair_size, center_y,
-            inverse_color, line_thickness
-        )
+            # Calculate the inverse color
+            inverse_color = (
+                255 - pixel_color[0], 255 - pixel_color[1], 255 - pixel_color[2])
 
-        # Vertical line
-        arcade.draw_line(
-            center_x, center_y - crosshair_size,
-            center_x, center_y + crosshair_size,
-            inverse_color, line_thickness
-        )
-        # Display camera position
-        arcade.draw_text(
-            f"Camera Position: ({self.camera_pos.x:.6f}, {self.camera_pos.y:.6f}, {self.camera_pos.z:.6f})",
-            10,
-            SCREEN_HEIGHT - 20,
-            arcade.color.WHITE,
-            12,
-        )
-        # Display camera position
-        arcade.draw_text(
-            f"Camera Rotation: ({self.camera_rot.x:.6f}, {self.camera_rot.y:.6f}, {self.camera_rot.z:.6f})",
-            10,
-            SCREEN_HEIGHT - 40,
-            arcade.color.WHITE,
-            12,
-        )
-        # Display camera position
-        arcade.draw_text(
-            f"Is Grounded: {self.is_on_ground}",
-            10,
-            SCREEN_HEIGHT - 60,
-            arcade.color.WHITE,
-            12,
-        )
+            # Draw the crosshair
+            crosshair_size = 5  # Size of the crosshair
+            line_thickness = 2  # Thickness of the crosshair lines
+
+            # Horizontal line
+            arcade.draw_line(
+                center_x - crosshair_size, center_y,
+                center_x + crosshair_size, center_y,
+                inverse_color, line_thickness
+            )
+
+            # Vertical line
+            arcade.draw_line(
+                center_x, center_y - crosshair_size,
+                center_x, center_y + crosshair_size,
+                inverse_color, line_thickness
+            )
+            # ========================INFO========================== #
+            arcade.draw_xywh_rectangle_filled(
+                5, 5, self.screen_width // 3, self.screen_height // 8, arcade.color.GRAY)
+            arcade.draw_xywh_rectangle_outline(
+                5, 5, self.screen_width // 3, self.screen_height // 8, arcade.color.BLACK, 2)
+            arcade.draw_text(f"₿ : {self.player_currency}", 10, self.screen_height // 14,
+                             arcade.color.GREEN, 20, font_name="Arial", anchor_x="left", anchor_y="center", bold=True)
+
+            # ========================GAME_INFO========================== #
+
+            # Display camera position
+            arcade.draw_text(
+                f"Camera Position: ({self.camera_pos.x:.6f}, {self.camera_pos.y:.6f}, {self.camera_pos.z:.6f})",
+                10,
+                self.screen_height - 20,
+                arcade.color.WHITE,
+                12,
+            )
+            # Display camera position
+            arcade.draw_text(
+                f"Camera Rotation: ({self.camera_rot.x:.6f}, {self.camera_rot.y:.6f}, {self.camera_rot.z:.6f})",
+                10,
+                self.screen_height - 40,
+                arcade.color.WHITE,
+                12,
+            )
+            # Display camera position
+            arcade.draw_text(
+                f"Is Grounded: {self.is_on_ground}",
+                10,
+                self.screen_height - 60,
+                arcade.color.WHITE,
+                12,
+            )
+            # Display FPS
+            arcade.draw_text(
+                f"FPS: {arcade.get_fps():.2f}",
+                self.screen_width - 100,
+                self.screen_height - 20,
+                arcade.color.WHITE,
+                12,
+            )
+        except Exception as e:
+            print(f"Error drawing texture: {e}")
 
     def on_update(self, delta_time: float):
         if self.weapon_anim_running:
@@ -459,7 +500,7 @@ class Game(arcade.Window):
 
         for obj in self.objects:
             if obj["id"] == 10:  # Assuming this is the enemy object
-                
+
                 # Calculate the direction vector from the enemy to the player
                 enemy_position = obj["buffer_data"]
                 direction = Vec3(
@@ -633,10 +674,11 @@ class Game(arcade.Window):
                 self.is_sliding = True
                 self.slide_timer = 0
                 # Set the slide direction
-                self.slide_dir = Vec3(self.movement_vector.x, 0, self.movement_vector.z).normalize()
+                self.slide_dir = Vec3(
+                    self.movement_vector.x, 0, self.movement_vector.z).normalize()
                 if self.slide_dir.mag == 0:
                     self.slide_dir = self.forward
-                    
+
         elif key == arcade.key.SPACE:  # Jump
             if self.is_on_ground:  # Only allow jumping if on the ground
                 print("Jumping!")
@@ -696,6 +738,11 @@ class Game(arcade.Window):
             self.movement["down"] = False
         elif key == arcade.key.LCTRL:
             self.is_sliding = False
+
+    def on_resize(self, width, height):
+        self.screen_width = width
+        self.screen_height = height
+        super().on_resize(width, height)
 
     def generate_sphere(radius, lat_segments, lon_segments, position=Vec3(0, 0, 0)):
         vertices = []

@@ -8,8 +8,6 @@ def get_Enemies(program):
             "id": 10,
             "buffer_data": Vec3(0, -2, -20),
             "rotation": Vec3(0, 0, 0),
-            "scale": Vec3(0.2, 0.2, 0.2),
-            "material": (1.0, 0.7, 0.8),
         }
     ]
     return enemies

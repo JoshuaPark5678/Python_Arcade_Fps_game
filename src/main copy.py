@@ -10,6 +10,7 @@ import time
 
 # Import the necessary files
 import level1
+import gltf_utils
 
 # Constants for screen dimensions
 SCREEN_WIDTH = 1000
@@ -29,7 +30,7 @@ class Game(arcade.Window):
         self.texture3 = None
         try:
             # Shader program for the object
-            self.obj_program = self.ctx.program(
+            self.GLTF_program = self.ctx.program(
                 vertex_shader="""
                 #version 330
                 uniform mat4 projection;
@@ -269,137 +270,24 @@ class Game(arcade.Window):
         self.current_frame = 0  # Current frame index
         self.animation_speed = 0.1  # Time (in seconds) between frames
         self.time_since_last_frame = 0  # Time accumulator for frame updates
-        self.animation_running = False  # Flag to control animation
+        self.weapon_anim_running = False  # Flag to control animation
         for i in range(1, 16):  # Assuming the images are named 0001.png to 0015.png
             texture_path = f"Python/Arcade/arcade-3d-game/model_ui/revolver/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
 
-        enemy1_path = ["Python\Arcade/arcade-3d-game\models\crazy_boy11.gltf",
-                       "Python\Arcade/arcade-3d-game\models\crazy_boy11.bin"]
+        enemy1_path = ["Python\Arcade/arcade-3d-game\models\crazy_boy.gltf",
+                       "Python\Arcade/arcade-3d-game\models\crazy_boy.bin"]
         # Initial position of the .obj model
-        self.enemies = level1.get_Enemies(self.obj_program)
+        self.animation_time = 0  # Track the animation time
+        self.enemies = level1.get_Enemies(self.GLTF_program)
+
+        # Add the enemy to the list of objects
         for enemy in self.enemies:
             self.objects.append(enemy)
-            enemy["geometry"] = self.load_gltf(enemy1_path[0], enemy1_path[1])
-
-    def load_gltf(self, gltf_path, bin_path):
-        """
-        Load a GLTF file and extract vertex, index, and material data.
-        """
-        print(f"Loading GLTF: {gltf_path}")
-        gltf = GLTF2().load(gltf_path)
-
-        with open(bin_path, "rb") as f:
-            bin_data = f.read()
-
-        geometries = []  # List to store all geometries
-
-        # Iterate through all meshes in the GLTF file
-        for mesh in gltf.meshes:
-            for primitive in mesh.primitives:
-                # === POSITION ===
-                pos_accessor = gltf.accessors[primitive.attributes.POSITION]
-                pos_view = gltf.bufferViews[pos_accessor.bufferView]
-                pos_offset = (pos_view.byteOffset or 0) + \
-                    (pos_accessor.byteOffset or 0)
-                pos_length = pos_accessor.count * 12  # 3 floats * 4 bytes
-                pos_data = array(
-                    'f', bin_data[pos_offset:pos_offset + pos_length])
-
-                # === UV (optional) ===
-                uv_data = []
-                if hasattr(primitive.attributes, "TEXCOORD_0"):
-                    uv_accessor = gltf.accessors[primitive.attributes.TEXCOORD_0]
-                    uv_view = gltf.bufferViews[uv_accessor.bufferView]
-                    uv_offset = (uv_view.byteOffset or 0) + \
-                        (uv_accessor.byteOffset or 0)
-                    uv_length = uv_accessor.count * 8  # 2 floats * 4 bytes
-                    uv_data = array(
-                        'f', bin_data[uv_offset:uv_offset + uv_length])
-
-                # Combine position and UV data into a single buffer
-                if uv_data:
-                    combined_data = []
-                    for i in range(pos_accessor.count):
-                        # Add position (3 floats)
-                        combined_data.extend(pos_data[i * 3:i * 3 + 3])
-                        # Add UV (2 floats)
-                        combined_data.extend(uv_data[i * 2:i * 2 + 2])
-                    # Ensure the buffer size aligns with the attribute layout
-                    vertex_buffer = self.ctx.buffer(
-                        data=array('f', combined_data).tobytes())
-                else:
-                    # If no UV data, pad with zeros to align with the buffer description
-                    combined_data = []
-                    for i in range(pos_accessor.count):
-                        # Add position (3 floats)
-                        combined_data.extend(pos_data[i * 3:i * 3 + 3])
-                        # Add default UV (2 floats)
-                        combined_data.extend([0.0, 0.0])
-                    vertex_buffer = self.ctx.buffer(
-                        data=array('f', combined_data).tobytes())
-
-                # === INDEX (optional) ===
-                index_buffer = None
-                if primitive.indices is not None:
-                    idx_accessor = gltf.accessors[primitive.indices]
-                    idx_view = gltf.bufferViews[idx_accessor.bufferView]
-                    idx_offset = (idx_view.byteOffset or 0) + \
-                        (idx_accessor.byteOffset or 0)
-
-                    component_size = {
-                        5121: 1,  # UNSIGNED_BYTE
-                        5123: 2,  # UNSIGNED_SHORT
-                        5125: 4   # UNSIGNED_INT
-                    }[idx_accessor.componentType]
-
-                    idx_length = idx_accessor.count * component_size
-                    index_data = bin_data[idx_offset:idx_offset + idx_length]
-
-                    index_buffer = self.ctx.buffer(data=index_data)
-
-                    geometry = self.ctx.geometry(
-                        content=[BufferDescription(
-                            vertex_buffer, "3f 2f", ["in_pos", "in_uv"])],
-                        index_buffer=index_buffer,
-                        index_element_size=component_size,
-                        mode=self.ctx.TRIANGLES
-                    )
-                else:
-                    geometry = self.ctx.geometry(
-                        content=[BufferDescription(
-                            vertex_buffer, "3f 2f", ["in_pos", "in_uv"])],
-                        mode=self.ctx.TRIANGLES
-                    )
-
-                # === MATERIAL ===
-                material = gltf.materials[primitive.material]
-                base_color_factor = material.pbrMetallicRoughness.baseColorFactor or [
-                    1.0, 1.0, 1.0, 1.0]
-                base_color_texture_index = material.pbrMetallicRoughness.baseColorTexture.index if material.pbrMetallicRoughness.baseColorTexture else None
-
-                # Load the base color texture if it exists
-                base_color_texture = None
-                if base_color_texture_index is not None:
-                    texture_info = gltf.textures[base_color_texture_index]
-                    image_info = gltf.images[texture_info.source]
-                    texture_path = gltf_path.rsplit(
-                        "/", 1)[0] + "/" + image_info.uri
-                    texture = arcade.load_texture(texture_path)
-                    base_color_texture = self.ctx.texture(
-                        size=(texture.width, texture.height),
-                        components=4,
-                        data=texture.image.tobytes()
-                    )
-
-                # Store geometry and material data
-                geometries.append({
-                    "geometry": geometry,
-                    "base_color_factor": base_color_factor,
-                    "base_color_texture": base_color_texture
-                })
-
-        return geometries
+            enemy["geometry"] = gltf_utils.load_gltf(
+                self, enemy1_path[0], enemy1_path[1], scale=Vec3(0.3, 0.3, 0.3))
+            animations = gltf_utils.load_animations(self, enemy1_path[0], enemy1_path[1])
+            
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
@@ -458,27 +346,17 @@ class Game(arcade.Window):
             elif obj["id"] == 10:  # Render enemy objects
                 obj["program"]["projection"] = self.proj
 
-                # Combine the camera rotation and the object's rotation
-                camera_rotation_matrix = Mat4.from_rotation(
-                    self.camera_rot.y, (0, 1, 0))
-                object_rotation_matrix = Mat4.from_rotation(
-                    obj["rotation"].y, (0, 1, 0))  # Rotate around Y-axis
+                # Rotate the object around the Y-axis
+                object_rotation_matrix = (Mat4.from_rotation(
+                    obj["rotation"].y, (0, 1, 0)) - Mat4.from_translation(Vec3(0, 0, 0)))  # Rotate around Y-axis
 
-                # Translate the enemy to the origin, apply rotation, and translate back
-                enemy_position = Vec3(obj["buffer_data"][0],
-                                      obj["buffer_data"][1], obj["buffer_data"][2])
-                translation_to_origin = Mat4.from_translation(enemy_position)
-                translation_back = Mat4.from_translation(self.camera_pos)
-
+                translation = (Mat4.from_translation(
+                    self.camera_pos) @ Mat4.from_translation(obj["buffer_data"]))
                 # Final model matrix
                 obj["program"]["model"] = (
-                    translation_back
-                    @ object_rotation_matrix
-                    @ translation_to_origin
-                    @ rotate_y
-                    @ rotate_x
-                    @ rotate_z
-                )
+                    # Apply camera rotation
+                    (translation + object_rotation_matrix)
+                    @ (rotate_y @ rotate_x @ rotate_z))
 
                 # obj order
                 # 0 and 1 = eyebrows
@@ -566,7 +444,7 @@ class Game(arcade.Window):
         )
 
     def on_update(self, delta_time: float):
-        if self.animation_running:
+        if self.weapon_anim_running:
             # Update the time accumulator
             self.time_since_last_frame += 0.5
 
@@ -578,13 +456,28 @@ class Game(arcade.Window):
                 # Loop back to the first frame if we reach the end
                 if self.current_frame >= len(self.revolver_textures):
                     self.current_frame = 0
-                    self.animation_running = False  # Stop the animation after one cycle
+                    self.weapon_anim_running = False  # Stop the animation after one cycle
 
-        # for obj in self.objects:
-        #     if obj["id"] == 10:  # Assuming this is the .obj model
-        #         # Move along the Z-axis
-        #         obj["buffer_data"] += Vec3(0, 0, 0.1 * delta_time)
-        # Convert camera rotation (yaw) to radians
+        for obj in self.objects:
+            if obj["id"] == 10:  # Assuming this is the enemy object
+                
+                # Calculate the direction vector from the enemy to the player
+                enemy_position = obj["buffer_data"]
+                direction = Vec3(
+                    -self.camera_pos.x - enemy_position[0],
+                    0,  # Ignore the Y-axis for horizontal rotation
+                    -self.camera_pos.z - enemy_position[2]
+                )
+
+                # Normalize the direction vector
+                direction = direction.normalize()
+
+                # Calculate the yaw (rotation around the Y-axis)
+                yaw = math.atan2(direction.x, direction.z)
+
+                # Update the enemy's rotation
+                obj["rotation"].y = yaw  # Convert to degrees
+
         rotation_y = self.camera_rot.y
 
         # Forward vector (affects x and z based on yaw)
@@ -741,10 +634,10 @@ class Game(arcade.Window):
                 self.is_sliding = True
                 self.slide_timer = 0
                 # Set the slide direction
-                # self.slide_dir = Vec3(
-                #     self.forward.x, 0, self.forward.z).normalize()
-                self.slide_dir = Vec3(
-                    self.movement_vector.x, 0, self.movement_vector.z).normalize()
+                self.slide_dir = Vec3(self.movement_vector.x, 0, self.movement_vector.z).normalize()
+                if self.slide_dir.mag == 0:
+                    self.slide_dir = self.forward
+                    
         elif key == arcade.key.SPACE:  # Jump
             if self.is_on_ground:  # Only allow jumping if on the ground
                 print("Jumping!")
@@ -785,8 +678,8 @@ class Game(arcade.Window):
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_LEFT:
-            if not self.animation_running:  # Start the animation only if it's not already running
-                self.animation_running = True
+            if not self.weapon_anim_running:  # Start the animation only if it's not already running
+                self.weapon_anim_running = True
                 self.current_frame = 0  # Reset to the first frame
 
     def on_key_release(self, key, modifiers):

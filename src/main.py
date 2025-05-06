@@ -21,7 +21,7 @@ SCREEN_HEIGHT = 720
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT,
-                         "Simple 3D Plane", resizable=True, vsync=True)
+                         "Simple 3D Plane", resizable=True)
         # FILE LOCATION
         self.file_location = os.path.abspath(__file__)
         # SCREEN DIMENSIONS
@@ -440,11 +440,29 @@ class Game(arcade.Window):
             )
             # ========================INFO========================== #
             arcade.draw_xywh_rectangle_filled(
-                5, 5, self.screen_width // 3, self.screen_height // 8, arcade.color.GRAY)
+                5, 5, self.screen_width // 3, self.screen_height // 10, arcade.color.GRAY)
             arcade.draw_xywh_rectangle_outline(
-                5, 5, self.screen_width // 3, self.screen_height // 8, arcade.color.BLACK, 2)
-            arcade.draw_text(f"₿ : {self.player_currency}", 10, self.screen_height // 14,
+                5, 5, self.screen_width // 3, self.screen_height // 10, arcade.color.BLACK, 2)
+            arcade.draw_text(f"₿ : {self.player_currency}", 10, self.screen_height // 18,
                              arcade.color.GREEN, 20, font_name="Arial", anchor_x="left", anchor_y="center", bold=True)
+            # display health bar
+            arcade.draw_ellipse_filled(
+                self.screen_width // 5, self.screen_height // 18, self.screen_width // 6, self.screen_height // 16, arcade.color.DARK_GRAY)
+            arcade.draw_text("Health", self.screen_width // 8, self.screen_height // 16,
+                             arcade.color.BLACK, 10, font_name="Kenney Future", anchor_x="left", anchor_y="center", bold=True)
+            arcade.draw_xywh_rectangle_filled(
+                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 18, arcade.color.RED)
+            for i in range(1, 6):
+                # evenly cut the health bar into 5 parts
+                arcade.draw_xywh_rectangle_outline(
+                    self.screen_width // 6 +
+                    (i - 1) * (self.screen_width // 8) // 5,
+                    self.screen_height // 36,
+                    self.screen_width // 8 // 5,
+                    self.screen_height // 18, arcade.color.BLACK, 2
+                )
+            arcade.draw_xywh_rectangle_outline(
+                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 18, arcade.color.BLACK, 4)
 
             # ========================GAME_INFO========================== #
 

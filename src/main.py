@@ -189,9 +189,11 @@ class Game(arcade.Window):
     def setup(self):
         # Set the background color
         arcade.set_background_color(arcade.color.SKY_BLUE)
+
+        self.fov = 90  # Field of view
         # set up the ground
         self.proj = Mat4.perspective_projection(
-            self.aspect_ratio, 0.1, 500, fov=100
+            self.aspect_ratio, 0.1, 500, fov=self.fov,  # Set the field of view
         )
         # Set up the model matrix for the ground
         self.plane["projection"] = self.proj
@@ -259,6 +261,7 @@ class Game(arcade.Window):
         self.player_currency = 0  # Player's currency
 
         # Movement variables
+        self.is_ADS = False  # Flag to track if the player is aiming down sights
         self.is_on_ground = False  # Flag to track if the player is on the ground
         self.vertical_velocity = 0  # Vertical velocity for jumping and gravity
         self.is_sliding = False  # Flag to track if the player is sliding
@@ -266,10 +269,11 @@ class Game(arcade.Window):
         self.slide_duration = 0.4  # Duration of the slide in seconds
         self.slide_timer = 0  # Timer to track the slide duration
         self.slide_dir = Vec3(0, 0, 0)  # Direction of the slide
+        self.default_speed = 2  # Default movement speed
         self.current_speed = 0.0  # Current movement speed
-        self.max_speed = 0.2  # Maximum movement speed
-        self.acceleration = 0.1  # Acceleration rate
-        self.deceleration = 0.1  # Deceleration rate
+        self.max_speed = 0.5  # Maximum movement speed
+        self.acceleration = 0.05  # Acceleration rate
+        self.deceleration = 0.5  # Deceleration rate
 
         # shakeing effect
         self.shake_intensity = 0  # Intensity of the shake
@@ -310,6 +314,14 @@ class Game(arcade.Window):
         rotate_x = Mat4.from_rotation(self.camera_rot.x, (1, 0, 0))
         rotate_y = Mat4.from_rotation(self.camera_rot.y, (0, 1, 0))
         rotate_z = Mat4.from_rotation(self.camera_rot.z, (0, 0, 1))
+
+        # FOV update
+        self.proj = Mat4.perspective_projection(
+            self.aspect_ratio, 0.1, 500, fov=self.fov,  # Set the field of view
+        )
+        self.plane["projection"] = self.proj
+        self.sphere_program["projection"] = self.proj
+        self.GLTF_program["projection"] = self.proj
 
         # Bind the ground texture before rendering the ground
         self.texture1.use(0)
@@ -447,11 +459,11 @@ class Game(arcade.Window):
                              arcade.color.GREEN, 20, font_name="Arial", anchor_x="left", anchor_y="center", bold=True)
             # display health bar
             arcade.draw_ellipse_filled(
-                self.screen_width // 5, self.screen_height // 18, self.screen_width // 6, self.screen_height // 16, arcade.color.DARK_GRAY)
-            arcade.draw_text("Health", self.screen_width // 8, self.screen_height // 16,
-                             arcade.color.BLACK, 10, font_name="Kenney Future", anchor_x="left", anchor_y="center", bold=True)
+                self.screen_width // 4.35, self.screen_height // 18, self.screen_width // 8, self.screen_height // 15, arcade.color.DARK_GRAY)
+            arcade.draw_text("Health", self.screen_width // 5, self.screen_height // 14,
+                             arcade.color.BLACK, 12, font_name="Kenney Future", anchor_x="left", anchor_y="center", bold=True)
             arcade.draw_xywh_rectangle_filled(
-                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 18, arcade.color.RED)
+                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.RED)
             for i in range(1, 6):
                 # evenly cut the health bar into 5 parts
                 arcade.draw_xywh_rectangle_outline(
@@ -459,10 +471,10 @@ class Game(arcade.Window):
                     (i - 1) * (self.screen_width // 8) // 5,
                     self.screen_height // 36,
                     self.screen_width // 8 // 5,
-                    self.screen_height // 18, arcade.color.BLACK, 2
+                    self.screen_height // 32, arcade.color.BLACK, 2
                 )
             arcade.draw_xywh_rectangle_outline(
-                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 18, arcade.color.BLACK, 4)
+                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.BLACK, 4)
 
             # ========================GAME_INFO========================== #
 
@@ -495,6 +507,14 @@ class Game(arcade.Window):
                 f"FPS: {arcade.get_fps():.2f}",
                 self.screen_width - 100,
                 self.screen_height - 20,
+                arcade.color.WHITE,
+                12,
+            )
+            # Display Current Speed (Acceleration)
+            arcade.draw_text(
+                f"Current Speed: {self.current_speed:.2f}",
+                10,
+                self.screen_height - 80,
                 arcade.color.WHITE,
                 12,
             )
@@ -546,12 +566,9 @@ class Game(arcade.Window):
         right_x = math.cos(rotation_y)
         right_z = math.sin(rotation_y)
 
-        # Scale movement vectors for more noticeable impact
-        movement_speed = self.max_speed  # Increased movement speed for more impact
-        self.forward = Vec3(forward_x * movement_speed,
-                            0, forward_z * movement_speed)
-        self.right = Vec3(right_x * movement_speed,
-                          0, right_z * movement_speed)
+        # Set the forward and right vectors
+        self.forward = Vec3(forward_x, 0, forward_z)
+        self.right = Vec3(right_x, 0, right_z)
 
         # Movement logic
         self.movement_vector = Vec3(0, 0, 0)  # Initialize movement vector
@@ -566,7 +583,21 @@ class Game(arcade.Window):
 
         # Normalize the movement vector to ensure consistent speed
         if self.movement_vector.mag > 0:
-            self.movement_vector = self.movement_vector.normalize().scale(movement_speed)
+            # Normalize the movement vector and Accelerate
+            if self.is_on_ground:
+                self.current_speed -= (self.deceleration * delta_time) # Decelerate
+            else:
+                self.current_speed += (self.acceleration * delta_time) # Accelerate
+            if self.current_speed > self.max_speed:
+                self.current_speed = self.max_speed  # Cap the speed
+            self.movement_vector = self.movement_vector.normalize().scale(self.current_speed + 0.3)
+            if self.current_speed < 0:
+                self.current_speed = 0  # Prevent negative speed
+        else:
+            # Decelerate if no movement keys are pressed
+            self.current_speed -= self.deceleration * delta_time
+            if self.current_speed < 0:
+                self.current_speed = 0  # Prevent negative speed
 
         # Calculate movement magnitude
         movement_magnitude = self.movement_vector.mag
@@ -589,13 +620,14 @@ class Game(arcade.Window):
 
         # Handle sliding
         if self.is_sliding:
-            self.slide_timer += delta_time
+            # self.slide_timer += delta_time
             # if self.slide_timer >= self.slide_duration:
             #     self.is_sliding = False  # End the slide
             #     self.slide_timer = 0  # Reset the slide timer
             # else:
             #     # Apply slide speed
-            self.movement_vector = self.slide_dir.normalize().scale(self.slide_speed)
+            self.movement_vector = self.slide_dir.normalize().scale(
+                self.movement_vector.mag + self.slide_speed)
 
         # Improved collision detection logic to adjust movement vector dynamically
         camera_radius = 1  # Define the radius of the camera's collision sphere
@@ -632,8 +664,14 @@ class Game(arcade.Window):
 
                 # Adjust movement vector to slide along the wall
                 dot_product = self.movement_vector.dot(normal)
+                print(f"dot_product: {dot_product}")
                 if dot_product > 0:
+                    # Calculate the projection of the movement vector onto the wall's normal
                     self.movement_vector -= normal.scale(dot_product)
+                    # Apply deceleration to the current speed
+                    self.current_speed -= self.deceleration * delta_time * 0.1
+                    if self.current_speed < 0:
+                        self.current_speed = 0  # Prevent negative speed
 
                 if distance < 0.3:
                     # Push the camera slightly out of the wall to avoid getting stuck
@@ -645,8 +683,6 @@ class Game(arcade.Window):
 
         # Stop vertical velocity if on the ground
         self.camera_pos.y += self.vertical_velocity
-
-        trigger_radius = 0.5  # Radius of the trigger sphere
         if self.is_sliding:
             trigger_position = Vec3(self.camera_pos.x,
                                     self.camera_pos.y, self.camera_pos.z)
@@ -661,6 +697,12 @@ class Game(arcade.Window):
             self.is_on_ground = True
         else:
             self.is_on_ground = False
+
+        if self.movement_vector.mag < 0.2:
+            # decrease acceleration if the player is not moving
+            self.current_speed -= self.deceleration * delta_time * 2
+            if self.current_speed < 0:
+                self.current_speed = 0
 
         # Apply movement vector to camera position
         self.camera_pos += self.movement_vector
@@ -740,6 +782,22 @@ class Game(arcade.Window):
             if not self.weapon_anim_running:  # Start the animation only if it's not already running
                 self.weapon_anim_running = True
                 self.current_frame = 0  # Reset to the first frame
+        if button == arcade.MOUSE_BUTTON_RIGHT:
+            # Check if the right mouse button is pressed
+            self.is_ADS = True
+            # Zoom in
+            for i in range(31):
+                self.fov = 90 - i
+            self.mouse_sensitivity = 0.0002  # Adjust sensitivity for aiming down sights
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        if button == arcade.MOUSE_BUTTON_RIGHT:
+            # Check if the right mouse button is released
+            self.is_ADS = False
+            # Zoom out
+            for i in range(31):
+                self.fov = 60 + i
+            self.mouse_sensitivity = 0.001
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.W:

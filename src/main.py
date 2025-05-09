@@ -139,12 +139,11 @@ class Game(arcade.Window):
             """,
             fragment_shader="""
             #version 330
-            uniform vec3 material_color;  // Material color from the .obj file
 
             out vec4 fragColor;
 
             void main() {
-                fragColor = vec4(material_color, 1.0);  // Use the material color
+                fragColor = vec4(1.0, 0.0, 0.0, 1.0);  // Use the material color
             }
             """
         )
@@ -262,6 +261,10 @@ class Game(arcade.Window):
             "left": False,
             "right": False,
         }
+        
+        # projectiles
+        self.projectiles = []  # List to store projectiles
+        
         # Money
         self.player_currency = 0  # Player's currency
 
@@ -298,8 +301,7 @@ class Game(arcade.Window):
         for i in range(1, 16):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
             self.revolver_ADS_textures.append(arcade.load_texture(texture_path))
-            
-            
+
 
         enemy1_path = [f"{self.file_dir}/models/crazy_boy.gltf",
                        f"{self.file_dir}/models/crazy_boy.bin"]
@@ -427,10 +429,10 @@ class Game(arcade.Window):
             # Draw the revolver texture
             arcade.draw_texture_rectangle(
                 # X position (center of the screen)
-                (self.screen_width // 2 + 20) + math.sin(
+                (self.screen_width // 2) + math.sin(
                 time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 200,
                 # Y position (center of the screen)
-                (self.screen_height // 2 - 80) + math.sin(
+                (self.screen_height // 2 - 60) + math.sin(
                 time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 100,
                 self.screen_width,  # Width of the texture
                 self.screen_height + 20,  # Height of the texture
@@ -540,6 +542,10 @@ class Game(arcade.Window):
             print(f"Error drawing texture: {e}")
 
     def on_update(self, delta_time: float):
+        # Update object list
+        self.objects.sort(key=self.get_distance, reverse=True)
+        
+        # Update the revolver animation frame
         if self.is_ADS:
             # Zoom in
             if self.fov > 70:
@@ -694,10 +700,9 @@ class Game(arcade.Window):
 
                 # Adjust movement vector to slide along the wall
                 dot_product = self.movement_vector.dot(normal)
-                print(f"dot_product: {dot_product}")
                 if dot_product > 0:
                     # Calculate the projection of the movement vector onto the wall's normal
-                    self.movement_vector -= normal.scale(dot_product)
+                    self.movement_vector -= normal.scale(abs(dot_product))
                     # Apply deceleration to the current speed
                     self.current_speed -= self.deceleration * delta_time * 0.1
                     if self.current_speed < 0:
@@ -791,6 +796,27 @@ class Game(arcade.Window):
             if not self.weapon_anim_running:  # Start the animation only if it's not already running
                 self.weapon_anim_running = True
                 self.current_frame = 0  # Reset to the first frame
+        
+                # shoot projectile
+                projectile = {
+                    "id": 4,
+                    "model": Vec3(self.camera_pos.x, self.camera_pos.y, self.camera_pos.z),
+                    "velocity": Vec3(0, 0, 0),
+                    "program": self.sphere_program,
+                    "geometry": self.generate_sphere(
+                        0.1, 10, 10, position=self.camera_pos),
+                }
+                # Set the projectile's velocity based on the camera direction
+                projectile["velocity"] = Vec3(
+                    -math.sin(self.camera_rot.y) * 0.5,
+                    math.sin(self.camera_rot.x) * 0.5,
+                    math.cos(self.camera_rot.y) * 0.5
+                )
+
+                self.projectiles.append(projectile)
+                self.objects.append(projectile)  # Add the projectile to the list of objects
+                self.objects.sort(key=self.get_distance, reverse=True)  # Sort objects by distance
+
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed
             self.is_ADS = True
@@ -821,7 +847,7 @@ class Game(arcade.Window):
         self.screen_height = height
         super().on_resize(width, height)
 
-    def generate_sphere(radius, lat_segments, lon_segments, position=Vec3(0, 0, 0)):
+    def generate_sphere(self, radius, lat_segments, lon_segments, position=Vec3(0, 0, 0)):
         vertices = []
         indices = []
         px, py, pz = position  # Unpack the position tuple
@@ -854,14 +880,26 @@ class Game(arcade.Window):
                 indices.extend([first, second, first + 1])
                 indices.extend([second, second + 1, first + 1])
 
-        return array('f', vertices), array('I', indices)
+        # return the vertices and indices as a tuple of arrays
+        sphere_array = array('f', vertices), array('I', indices)
+        
+        # convert to geometry
+        sphere_buffer = self.ctx.buffer(data=sphere_array[0])
+        sphere_geometry = self.ctx.geometry(
+            content=[BufferDescription(
+                sphere_buffer, "3f", ("in_pos",))],
+            index_buffer=self.ctx.buffer(
+                data=sphere_array[1]),  # Use index buffer
+            mode=self.ctx.TRIANGLES,  # Use TRIANGLES for solid rendering
+        )
+        return sphere_geometry
 
     def get_distance(self, object):
-        # Calculate the center of the wall by averaging all vertices' coordinates
-        positions = object["buffer_data"]
         # Check if the buffer data has the expected number of values
         distance = 0
-        if len(positions) == 20:
+        if object["id"] == 1:
+            # Calculate the center of the wall by averaging all vertices' coordinates
+            positions = object["buffer_data"]
             # Planes have 20 vertices (x, y, z, u, v)
             num_vertices = len(positions) // 5
 

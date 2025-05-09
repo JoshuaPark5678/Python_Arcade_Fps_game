@@ -1,6 +1,7 @@
 # Organize imports
 import arcade
 import arcade.resources
+import pyglet
 from pyglet.math import Mat4, Vec3
 from array import array
 from arcade.gl import BufferDescription
@@ -23,11 +24,15 @@ class Game(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT,
                          "Simple 3D Plane", resizable=True)
         # FILE LOCATION
-        self.file_location = os.path.abspath(__file__)
+        self.file_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        print(self.file_dir)
+        
+        self.icon = pyglet.image.load(f"{self.file_dir}/texture/cat1.jpg")
+        arcade.get_window().set_icon(self.icon)
+        
         # SCREEN DIMENSIONS
         self.screen_width = SCREEN_WIDTH
         self.screen_height = SCREEN_HEIGHT
-        print(self.file_location)
         # Enable Timings for FPS
         arcade.enable_timings()
         # Set the window's position on the screen
@@ -157,13 +162,13 @@ class Game(arcade.Window):
         """
 
         ground_texture = arcade.load_texture(
-            "Python_Arcade_Fps_game/texture\default.png"
+            f"{self.file_dir}/texture/default.png"
         )
         wall_texture = arcade.load_texture(
-            "Python_Arcade_Fps_game/texture/default2.png"
+            f"{self.file_dir}/texture/default2.png"
         )
         cat_texture = arcade.load_texture(
-            "Python_Arcade_Fps_game/texture\cat1.jpg"
+            f"{self.file_dir}/texture/cat1.jpg"
         )
         self.texture1 = self.ctx.texture(
             size=(ground_texture.width, ground_texture.height),
@@ -265,7 +270,7 @@ class Game(arcade.Window):
         self.is_on_ground = False  # Flag to track if the player is on the ground
         self.vertical_velocity = 0  # Vertical velocity for jumping and gravity
         self.is_sliding = False  # Flag to track if the player is sliding
-        self.slide_speed = 0.3  # Speed during the slide
+        self.slide_speed = 0.4  # Speed during the slide
         self.slide_duration = 0.4  # Duration of the slide in seconds
         self.slide_timer = 0  # Timer to track the slide duration
         self.slide_dir = Vec3(0, 0, 0)  # Direction of the slide
@@ -274,8 +279,7 @@ class Game(arcade.Window):
         self.max_speed = 0.5  # Maximum movement speed
         self.acceleration = 0.05  # Acceleration rate
         self.deceleration = 0.5  # Deceleration rate
-
-        # shakeing effect
+        # shaking effect
         self.shake_intensity = 0  # Intensity of the shake
         self.shake_speed = 10.0  # Speed of the shake oscillation
         self.shake_decay = 0.9  # How quickly the shake effect decays
@@ -283,16 +287,22 @@ class Game(arcade.Window):
         self.shake_direction = 0
         # revolver animation
         self.revolver_textures = []  # List to store all textures for the animation
+        self.revolver_ADS_textures = []  # List to store all textures for the ADS animation
         self.current_frame = 0  # Current frame index
         self.animation_speed = 0.1  # Time (in seconds) between frames
         self.time_since_last_frame = 0  # Time accumulator for frame updates
         self.weapon_anim_running = False  # Flag to control animation
-        for i in range(1, 16):  # Assuming the images are named 0001.png to 0015.png
-            texture_path = f"Python_Arcade_Fps_game/model_ui/revolver/{i:04d}.png"
+        for i in range(1, 16):  # Assuming the images are named 0001.png to 0016.png
+            texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
+        for i in range(1, 16):  # Assuming the images are named 0001.png to 0016.png
+            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
+            self.revolver_ADS_textures.append(arcade.load_texture(texture_path))
+            
+            
 
-        enemy1_path = ["Python_Arcade_Fps_game\models\crazy_boy.gltf",
-                       "Python_Arcade_Fps_game\models\crazy_boy.bin"]
+        enemy1_path = [f"{self.file_dir}/models/crazy_boy.gltf",
+                       f"{self.file_dir}/models/crazy_boy.bin"]
         # Initial position of the .obj model
         self.animation_time = 0  # Track the animation time
         self.enemies = level1.get_Enemies(self.GLTF_program)
@@ -408,17 +418,25 @@ class Game(arcade.Window):
         try:
             # ==========================UI========================= #
             # =======================WEAPON======================== #
-            current_texture = self.revolver_textures[self.current_frame]
-
+            if self.is_ADS:
+                # If aiming down sights, use the ADS textures
+                current_texture = self.revolver_ADS_textures[self.current_frame]
+            else:
+                # If not aiming down sights, use the regular textures
+                current_texture = self.revolver_textures[self.current_frame]
+            # Draw the revolver texture
             arcade.draw_texture_rectangle(
                 # X position (center of the screen)
-                self.screen_width // 2 + 20,
+                (self.screen_width // 2 + 20) + math.sin(
+                time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 200,
                 # Y position (center of the screen)
-                self.screen_height // 2 - 80,
+                (self.screen_height // 2 - 80) + math.sin(
+                time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 100,
                 self.screen_width,  # Width of the texture
                 self.screen_height + 20,  # Height of the texture
                 current_texture  # The texture to draw
             )
+            
             # ======================CROSSHAIR====================== #
 
             # draw crosshair that has inverse color from the background
@@ -522,10 +540,23 @@ class Game(arcade.Window):
             print(f"Error drawing texture: {e}")
 
     def on_update(self, delta_time: float):
+        if self.is_ADS:
+            # Zoom in
+            if self.fov > 70:
+                # Zoom in
+                self.fov -= 3
+            self.mouse_sensitivity = 0.0005
+        else:
+            if self.fov < 90:
+                # Zoom out
+                self.fov += 3
+            self.mouse_sensitivity = 0.001
+            
         if self.weapon_anim_running:
+            if self.current_frame < 3:
+                self.camera_rot.x -= 0.01  # Adjust the camera rotation for the animation
             # Update the time accumulator
             self.time_since_last_frame += 0.5
-
             # Check if it's time to update the frame
             if self.time_since_last_frame >= self.animation_speed:
                 self.time_since_last_frame = 0  # Reset the time accumulator
@@ -620,14 +651,13 @@ class Game(arcade.Window):
 
         # Handle sliding
         if self.is_sliding:
-            # self.slide_timer += delta_time
-            # if self.slide_timer >= self.slide_duration:
-            #     self.is_sliding = False  # End the slide
-            #     self.slide_timer = 0  # Reset the slide timer
-            # else:
-            #     # Apply slide speed
             self.movement_vector = self.slide_dir.normalize().scale(
-                self.movement_vector.mag + self.slide_speed)
+                self.slide_speed)
+            self.slide_speed -= self.deceleration * delta_time * 0.5  # Decrease slide speed over time
+            if self.slide_speed < 0:
+                self.slide_speed = 0  # Prevent negative slide speed
+        else:
+            self.slide_speed = 0.4  # Reset slide speed when not sliding
 
         # Improved collision detection logic to adjust movement vector dynamically
         camera_radius = 1  # Define the radius of the camera's collision sphere
@@ -708,7 +738,7 @@ class Game(arcade.Window):
         self.camera_pos += self.movement_vector
 
         # Apply gravity
-        gravity = 0.01  # Gravity strength
+        gravity = 0.02  # Gravity strength
         if not self.is_on_ground:
             self.vertical_velocity += gravity  # Apply gravity to vertical velocity
             self.camera_pos.y += self.vertical_velocity  # Update camera's Y position
@@ -738,12 +768,11 @@ class Game(arcade.Window):
                     self.movement_vector.x, 0, self.movement_vector.z).normalize()
                 if self.slide_dir.mag == 0:
                     self.slide_dir = self.forward
-
         elif key == arcade.key.SPACE:  # Jump
             if self.is_on_ground:  # Only allow jumping if on the ground
                 print("Jumping!")
                 self.is_on_ground = False  # Set the flag to false when jumping
-                self.vertical_velocity = -0.2  # Set jump power
+                self.vertical_velocity = -0.3  # Set jump power
         elif key == arcade.key.ESCAPE:
             self.mouse_locked = not self.mouse_locked
             self.set_mouse_visible(not self.mouse_locked)
@@ -751,26 +780,6 @@ class Game(arcade.Window):
         elif key == arcade.key.R:
             self.camera_pos = Vec3(0, -2, -5)
             self.camera_rot.y = math.radians(0)
-        elif key == arcade.key.E:
-            print(f"Wall list: {[object['name'] for object in self.objects]}")
-        elif key == arcade.key.Q:
-            for obj in self.objects:
-                if obj["id"] == 1:
-                    print(obj["geometry"])
-        elif key == arcade.key.LEFT:
-            # rotate the enemy to it's rotation
-            for obj in self.objects:
-                if obj["id"] == 10:  # Assuming this is the enemy object
-                    # Increment the enemy's rotation (yaw)
-                    # Adjust the speed of rotation as needed
-                    obj["rotation"].y += 0.1
-        elif key == arcade.key.RIGHT:
-            # rotate the enemy to it's rotation
-            for obj in self.objects:
-                if obj["id"] == 10:  # Assuming this is the enemy object
-                    # Increment the enemy's rotation (yaw)
-                    # Adjust the speed of rotation as needed
-                    obj["rotation"].y -= 0.1
 
     def on_mouse_motion(self, x, y, dx, dy):
         if self.mouse_locked:
@@ -785,19 +794,11 @@ class Game(arcade.Window):
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed
             self.is_ADS = True
-            # Zoom in
-            for i in range(31):
-                self.fov = 90 - i
-            self.mouse_sensitivity = 0.0002  # Adjust sensitivity for aiming down sights
 
     def on_mouse_release(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is released
             self.is_ADS = False
-            # Zoom out
-            for i in range(31):
-                self.fov = 60 + i
-            self.mouse_sensitivity = 0.001
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.W:

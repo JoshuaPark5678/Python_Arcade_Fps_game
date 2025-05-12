@@ -24,12 +24,13 @@ class Game(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT,
                          "Simple 3D Plane", resizable=True)
         # FILE LOCATION
-        self.file_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.file_dir = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
         print(self.file_dir)
-        
+
         self.icon = pyglet.image.load(f"{self.file_dir}/texture/cat1.jpg")
         arcade.get_window().set_icon(self.icon)
-        
+
         # SCREEN DIMENSIONS
         self.screen_width = SCREEN_WIDTH
         self.screen_height = SCREEN_HEIGHT
@@ -261,10 +262,10 @@ class Game(arcade.Window):
             "left": False,
             "right": False,
         }
-        
+
         # projectiles
         self.projectiles = []  # List to store projectiles
-        
+
         # Money
         self.player_currency = 0  # Player's currency
 
@@ -300,8 +301,8 @@ class Game(arcade.Window):
             self.revolver_textures.append(arcade.load_texture(texture_path))
         for i in range(1, 16):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
-            self.revolver_ADS_textures.append(arcade.load_texture(texture_path))
-
+            self.revolver_ADS_textures.append(
+                arcade.load_texture(texture_path))
 
         enemy1_path = [f"{self.file_dir}/models/crazy_boy.gltf",
                        f"{self.file_dir}/models/crazy_boy.bin"]
@@ -365,15 +366,9 @@ class Game(arcade.Window):
                 obj["geometry"].render(obj["program"])
             elif obj["id"] == 4:
                 # Render projectiles
-                obj["model"] = obj["model"] + obj["velocity"]
-                # Check if the projectile is out of bounds and remove it
-                if (obj["model"].x < -100 or obj["model"].x > 100 or
-                        obj["model"].y < -100 or obj["model"].y > 100 or
-                        obj["model"].z < -100 or obj["model"].z > 100) or obj["model"].y > 2:
-                    self.objects.remove(obj)
                 obj["program"]["projection"] = self.proj
                 obj["program"]["model"] = Mat4.from_translation(Vec3(
-                    obj["model"].x * -1, obj["model"].y * -1, obj["model"].z * -1)) @ rotate_y @ rotate_x  # Correctly set the model matrix
+                    obj["model"].x, obj["model"].y, obj["model"].z)) @ rotate_y @ rotate_x  # Correctly set the model matrix
                 obj["geometry"].render(obj["program"])
 
             # Render the enemy object
@@ -430,15 +425,15 @@ class Game(arcade.Window):
             arcade.draw_texture_rectangle(
                 # X position (center of the screen)
                 (self.screen_width // 2) + math.sin(
-                time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 200,
+                    time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 200,
                 # Y position (center of the screen)
                 (self.screen_height // 2 - 60) + math.sin(
-                time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 100,
+                    time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 100,
                 self.screen_width,  # Width of the texture
                 self.screen_height + 20,  # Height of the texture
                 current_texture  # The texture to draw
             )
-            
+
             # ======================CROSSHAIR====================== #
 
             # draw crosshair that has inverse color from the background
@@ -471,30 +466,54 @@ class Game(arcade.Window):
                 inverse_color, line_thickness
             )
             # ========================INFO========================== #
-            arcade.draw_xywh_rectangle_filled(
-                5, 5, self.screen_width // 3, self.screen_height // 10, arcade.color.GRAY)
-            arcade.draw_xywh_rectangle_outline(
-                5, 5, self.screen_width // 3, self.screen_height // 10, arcade.color.BLACK, 2)
-            arcade.draw_text(f"₿ : {self.player_currency}", 10, self.screen_height // 18,
-                             arcade.color.GREEN, 20, font_name="Arial", anchor_x="left", anchor_y="center", bold=True)
             # display health bar
             arcade.draw_ellipse_filled(
-                self.screen_width // 4.35, self.screen_height // 18, self.screen_width // 8, self.screen_height // 15, arcade.color.DARK_GRAY)
-            arcade.draw_text("Health", self.screen_width // 5, self.screen_height // 14,
-                             arcade.color.BLACK, 12, font_name="Kenney Future", anchor_x="left", anchor_y="center", bold=True)
-            arcade.draw_xywh_rectangle_filled(
-                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.RED)
+                self.screen_width // 2, self.screen_height // 22, self.screen_width // 8, self.screen_height // 14, arcade.color.DARK_GRAY)
+            arcade.draw_text("Health", self.screen_width // 2, self.screen_height // 16,
+                             arcade.color.BLACK, 12, font_name="Kenney Future", anchor_x="center", anchor_y="center", bold=True)
+            arcade.draw_rectangle_filled(
+                self.screen_width // 2, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.RED)
             for i in range(1, 6):
                 # evenly cut the health bar into 5 parts
-                arcade.draw_xywh_rectangle_outline(
-                    self.screen_width // 6 +
-                    (i - 1) * (self.screen_width // 8) // 5,
-                    self.screen_height // 36,
-                    self.screen_width // 8 // 5,
-                    self.screen_height // 32, arcade.color.BLACK, 2
-                )
-            arcade.draw_xywh_rectangle_outline(
-                self.screen_width // 6, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.BLACK, 4)
+                arcade.draw_rectangle_outline(
+                    self.screen_width // 2 - (self.screen_width // 8) / 1.7 + (self.screen_width // 8) / 5 * i, self.screen_height // 36, self.screen_width // 8 / 5, self.screen_height // 32, arcade.color.BLACK, 4)
+            arcade.draw_rectangle_outline(
+                self.screen_width // 2, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.BLACK, 4)
+
+            # display CYLINDER
+            cylinder_radius = self.screen_width // 10
+            if self.current_frame < 8:
+                cylinder_radius += self.current_frame
+            else:
+                cylinder_radius -= (self.current_frame - 8)
+
+            # Draw the cylinder body
+            arcade.draw_circle_filled(
+                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius, (45, 45, 55))
+            arcade.draw_circle_filled(
+                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius // 1.2, arcade.color.GRAY)
+            arcade.draw_circle_outline(
+                self.screen_width -
+                cylinder_radius // 3, cylinder_radius // 3, cylinder_radius, arcade.color.BLACK, 4
+            )
+            # draw the cylinder middle thingy
+            arcade.draw_circle_filled(
+                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius // 6, (55, 55, 65))
+            arcade.draw_circle_outline(
+                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius // 6, arcade.color.BLACK, 4)
+
+            # draw the cylinder bullets (5 bullets)
+            angle = 360 / 5
+            for i in range(5):
+                bullet_angle = math.radians(angle * i)
+                bullet_x = self.screen_width - cylinder_radius // 2 + \
+                    cylinder_radius * math.cos(bullet_angle)
+                bullet_y = cylinder_radius // 2 + \
+                    cylinder_radius * math.sin(bullet_angle)
+                arcade.draw_circle_filled(
+                    bullet_x, bullet_y, cylinder_radius // 8, arcade.color.DARK_GRAY)
+                arcade.draw_circle_outline(
+                    bullet_x, bullet_y, cylinder_radius // 8, arcade.color.BLACK, 2)
 
             # ========================GAME_INFO========================== #
 
@@ -544,7 +563,7 @@ class Game(arcade.Window):
     def on_update(self, delta_time: float):
         # Update object list
         self.objects.sort(key=self.get_distance, reverse=True)
-        
+
         # Update the revolver animation frame
         if self.is_ADS:
             # Zoom in
@@ -557,7 +576,7 @@ class Game(arcade.Window):
                 # Zoom out
                 self.fov += 3
             self.mouse_sensitivity = 0.001
-            
+
         if self.weapon_anim_running:
             if self.current_frame < 3:
                 self.camera_rot.x -= 0.01  # Adjust the camera rotation for the animation
@@ -574,7 +593,15 @@ class Game(arcade.Window):
                     self.weapon_anim_running = False  # Stop the animation after one cycle
 
         for obj in self.objects:
-            if obj["id"] == 10:  # Assuming this is the enemy object
+            if obj["id"] == 4:
+                # Update the projectile's position based on its velocity
+                obj["model"] = obj["model"] + obj["velocity"]
+                # Check if the projectile is out of bounds and remove it
+                if (obj["model"].x < -100 or obj["model"].x > 100 or
+                        obj["model"].y < -100 or obj["model"].y > 100 or
+                        obj["model"].z < -100 or obj["model"].z > 100) or obj["model"].y < -2:
+                    self.objects.remove(obj)
+            elif obj["id"] == 10:  # Assuming this is the enemy object
 
                 # Calculate the direction vector from the enemy to the player
                 enemy_position = obj["buffer_data"]
@@ -622,9 +649,11 @@ class Game(arcade.Window):
         if self.movement_vector.mag > 0:
             # Normalize the movement vector and Accelerate
             if self.is_on_ground:
-                self.current_speed -= (self.deceleration * delta_time) # Decelerate
+                self.current_speed -= (self.deceleration *
+                                       delta_time)  # Decelerate
             else:
-                self.current_speed += (self.acceleration * delta_time) # Accelerate
+                self.current_speed += (self.acceleration *
+                                       delta_time)  # Accelerate
             if self.current_speed > self.max_speed:
                 self.current_speed = self.max_speed  # Cap the speed
             self.movement_vector = self.movement_vector.normalize().scale(self.current_speed + 0.3)
@@ -659,7 +688,8 @@ class Game(arcade.Window):
         if self.is_sliding:
             self.movement_vector = self.slide_dir.normalize().scale(
                 self.slide_speed)
-            self.slide_speed -= self.deceleration * delta_time * 0.5  # Decrease slide speed over time
+            self.slide_speed -= self.deceleration * \
+                delta_time * 0.5  # Decrease slide speed over time
             if self.slide_speed < 0:
                 self.slide_speed = 0  # Prevent negative slide speed
         else:
@@ -796,11 +826,11 @@ class Game(arcade.Window):
             if not self.weapon_anim_running:  # Start the animation only if it's not already running
                 self.weapon_anim_running = True
                 self.current_frame = 0  # Reset to the first frame
-        
+
                 # shoot projectile
                 projectile = {
                     "id": 4,
-                    "model": Vec3(self.camera_pos.x, self.camera_pos.y, self.camera_pos.z),
+                    "model": Vec3(-self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z),
                     "velocity": Vec3(0, 0, 0),
                     "program": self.sphere_program,
                     "geometry": self.generate_sphere(
@@ -808,14 +838,14 @@ class Game(arcade.Window):
                 }
                 # Set the projectile's velocity based on the camera direction
                 projectile["velocity"] = Vec3(
-                    -math.sin(self.camera_rot.y) * 0.5,
-                    math.sin(self.camera_rot.x) * 0.5,
-                    math.cos(self.camera_rot.y) * 0.5
+                    math.sin(self.camera_rot.y),
+                    -math.sin(self.camera_rot.x),
+                    -math.cos(self.camera_rot.y),
                 )
 
                 self.projectiles.append(projectile)
-                self.objects.append(projectile)  # Add the projectile to the list of objects
-                self.objects.sort(key=self.get_distance, reverse=True)  # Sort objects by distance
+                # Add the projectile to the list of objects
+                self.objects.append(projectile)
 
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed
@@ -882,7 +912,7 @@ class Game(arcade.Window):
 
         # return the vertices and indices as a tuple of arrays
         sphere_array = array('f', vertices), array('I', indices)
-        
+
         # convert to geometry
         sphere_buffer = self.ctx.buffer(data=sphere_array[0])
         sphere_geometry = self.ctx.geometry(

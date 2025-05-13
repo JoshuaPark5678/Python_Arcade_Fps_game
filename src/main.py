@@ -296,10 +296,11 @@ class Game(arcade.Window):
         self.animation_speed = 0.1  # Time (in seconds) between frames
         self.time_since_last_frame = 0  # Time accumulator for frame updates
         self.weapon_anim_running = False  # Flag to control animation
-        for i in range(1, 16):  # Assuming the images are named 0001.png to 0016.png
+        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
-        for i in range(1, 16):  # Assuming the images are named 0001.png to 0016.png
+            print(i)
+        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
             self.revolver_ADS_textures.append(
                 arcade.load_texture(texture_path))
@@ -315,6 +316,11 @@ class Game(arcade.Window):
             self.objects.append(enemy)
             enemy["geometry"] = gltf_utils.load_gltf(
                 self, enemy1_path[0], enemy1_path[1], scale=Vec3(0.3, 0.3, 0.3))
+
+        # Set ammo
+        self.ammo = 0  # Player's ammo count
+        self.max_ammo = 5  # Maximum ammo count
+        self.cylinder_spin = 0  # Cylinder spin angle
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
@@ -483,37 +489,60 @@ class Game(arcade.Window):
             # display CYLINDER
             cylinder_radius = self.screen_width // 10
             if self.current_frame < 8:
-                cylinder_radius += self.current_frame
+                cylinder_radius += self.current_frame // 2
             else:
-                cylinder_radius -= (self.current_frame - 8)
+                cylinder_radius -= (self.current_frame - 8) // 2
+
+            # center of the cylinder
+            center = [self.screen_width -
+                      cylinder_radius // 2, cylinder_radius // 2]
 
             # Draw the cylinder body
             arcade.draw_circle_filled(
-                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius, (45, 45, 55))
+                center[0], center[1], cylinder_radius, (45, 45, 55))
             arcade.draw_circle_filled(
-                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius // 1.2, arcade.color.GRAY)
+                center[0], center[1], cylinder_radius // 1.2, arcade.color.GRAY)
             arcade.draw_circle_outline(
-                self.screen_width -
-                cylinder_radius // 3, cylinder_radius // 3, cylinder_radius, arcade.color.BLACK, 4
+                center[0], center[1], cylinder_radius, arcade.color.BLACK, 4
             )
             # draw the cylinder middle thingy
             arcade.draw_circle_filled(
-                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius // 6, (55, 55, 65))
+                center[0], center[1], cylinder_radius // 6, (55, 55, 65))
             arcade.draw_circle_outline(
-                self.screen_width - cylinder_radius // 3, cylinder_radius // 3, cylinder_radius // 6, arcade.color.BLACK, 4)
+                center[0], center[1], cylinder_radius // 6, arcade.color.BLACK, 4)
 
             # draw the cylinder bullets (5 bullets)
             angle = 360 / 5
+
+            print(self.cylinder_spin)
+
+            ammo = self.ammo
+            chamber = [0, 0, 0, 0, 0]
+            for i in range(ammo):
+                chamber[i] = 1
+
             for i in range(5):
-                bullet_angle = math.radians(angle * i)
-                bullet_x = self.screen_width - cylinder_radius // 2 + \
-                    cylinder_radius * math.cos(bullet_angle)
-                bullet_y = cylinder_radius // 2 + \
-                    cylinder_radius * math.sin(bullet_angle)
-                arcade.draw_circle_filled(
-                    bullet_x, bullet_y, cylinder_radius // 8, arcade.color.DARK_GRAY)
+                # Calculate the position of each bullet
+                bullet_angle = math.radians(
+                    angle * i) + math.radians(90) - math.radians(self.cylinder_spin)
+                bullet_x = center[0] + \
+                    cylinder_radius // 2 * math.cos(bullet_angle)
+                bullet_y = center[1] + \
+                    cylinder_radius // 2 * math.sin(bullet_angle)
+
+                # Draw the bullet
+                if chamber[i] == 1:
+                    arcade.draw_circle_filled(
+                        bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
+                else:
+                    arcade.draw_circle_filled(
+                        bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK)
+
+                # Draw the bullet outline
                 arcade.draw_circle_outline(
-                    bullet_x, bullet_y, cylinder_radius // 8, arcade.color.BLACK, 2)
+                    bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK, 2)
+
+                ammo -= 1
 
             # ========================GAME_INFO========================== #
 
@@ -578,6 +607,15 @@ class Game(arcade.Window):
             self.mouse_sensitivity = 0.001
 
         if self.weapon_anim_running:
+            # Calculate the spin based on the current frame
+            # 12 frames to spin 72 degrees
+            if self.current_frame > 3:
+                self.cylinder_spin += 6
+            # Reset the spin if it exceeds 360 degrees
+            if self.cylinder_spin >= 360:
+                self.cylinder_spin = 0
+
+            # Update the revolver animation frame
             if self.current_frame < 3:
                 self.camera_rot.x -= 0.01  # Adjust the camera rotation for the animation
             # Update the time accumulator
@@ -813,8 +851,13 @@ class Game(arcade.Window):
             self.set_mouse_visible(not self.mouse_locked)
             self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
         elif key == arcade.key.R:
-            self.camera_pos = Vec3(0, -2, -5)
-            self.camera_rot.y = math.radians(0)
+            # Reload the revolver
+            if self.ammo < self.max_ammo:
+                self.ammo += 1
+                if self.ammo > self.max_ammo:
+                    self.ammo = self.max_ammo
+        elif key == arcade.key.Q:
+            self.cylinder_spin += 72  # Spin the cylinder
 
     def on_mouse_motion(self, x, y, dx, dy):
         if self.mouse_locked:
@@ -823,29 +866,34 @@ class Game(arcade.Window):
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_LEFT:
-            if not self.weapon_anim_running:  # Start the animation only if it's not already running
-                self.weapon_anim_running = True
-                self.current_frame = 0  # Reset to the first frame
+            # check if there are ammo
+            if self.ammo > 0:
+                self.ammo -= 1
+                if not self.weapon_anim_running:  # Start the animation only if it's not already running
+                    self.weapon_anim_running = True
+                    self.current_frame = 0  # Reset to the first frame
 
-                # shoot projectile
-                projectile = {
-                    "id": 4,
-                    "model": Vec3(-self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z),
-                    "velocity": Vec3(0, 0, 0),
-                    "program": self.sphere_program,
-                    "geometry": self.generate_sphere(
-                        0.1, 10, 10, position=self.camera_pos),
-                }
-                # Set the projectile's velocity based on the camera direction
-                projectile["velocity"] = Vec3(
-                    math.sin(self.camera_rot.y),
-                    -math.sin(self.camera_rot.x),
-                    -math.cos(self.camera_rot.y),
-                )
+                    # shoot projectile
+                    projectile = {
+                        "id": 4,
+                        "model": Vec3(-self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z),
+                        "velocity": Vec3(0, 0, 0),
+                        "program": self.sphere_program,
+                        "geometry": self.generate_sphere(
+                            0.1, 10, 10, position=self.camera_pos),
+                    }
+                    # Set the projectile's velocity based on the camera direction
+                    projectile["velocity"] = Vec3(
+                        math.sin(self.camera_rot.y),
+                        -math.sin(self.camera_rot.x),
+                        -math.cos(self.camera_rot.y),
+                    )
 
-                self.projectiles.append(projectile)
-                # Add the projectile to the list of objects
-                self.objects.append(projectile)
+                    self.projectiles.append(projectile)
+                    # Add the projectile to the list of objects
+                    self.objects.append(projectile)
+
+                    # Decrease ammo count
 
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed

@@ -299,28 +299,36 @@ class Game(arcade.Window):
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
-            print(i)
+            
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
             self.revolver_ADS_textures.append(
                 arcade.load_texture(texture_path))
-
+        print("Revolver textures loaded")
         enemy1_path = [f"{self.file_dir}/models/crazy_boy.gltf",
                        f"{self.file_dir}/models/crazy_boy.bin"]
         # Initial position of the .obj model
         self.animation_time = 0  # Track the animation time
         self.enemies = level1.get_Enemies(self.GLTF_program)
+        
+        self.enemy1_anim = gltf_utils.load_animations(self, enemy1_path[0], enemy1_path[1])
 
+        print(self.enemy1_anim[1]["name"])
+    
         # Add the enemy to the list of objects
         for enemy in self.enemies:
             self.objects.append(enemy)
             enemy["geometry"] = gltf_utils.load_gltf(
-                self, enemy1_path[0], enemy1_path[1], scale=Vec3(0.3, 0.3, 0.3))
+                self, enemy1_path[0], enemy1_path[1], scale=Vec3(0.2, 0.2, 0.2))
 
-        # Set ammo
-        self.ammo = 0  # Player's ammo count
+
+        # Set ammos
         self.max_ammo = 5  # Maximum ammo count
         self.cylinder_spin = 0  # Cylinder spin angle
+        self.chamber = []  # Chamber state (1 for loaded, 0 for empty)
+        
+        # set time
+        self.time = 0  # UNIVERSAL TIME
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
@@ -514,24 +522,29 @@ class Game(arcade.Window):
             # draw the cylinder bullets (5 bullets)
             angle = 360 / 5
 
-            print(self.cylinder_spin)
-
-            ammo = self.ammo
-            chamber = [0, 0, 0, 0, 0]
-            for i in range(ammo):
-                chamber[i] = 1
-
+            # chamber is self.chamber's first 5 elements. 
+            # If self.chamber length is less than 5, fill the rest with 0
+            chamber = self.chamber[:5] + [0] * (5 - len(self.chamber))
+            # all bullets that are > 0
+            ammo = len([bullet for bullet in chamber if bullet > 0])
+            back_cycle = 90
+            if self.current_frame > 0:
+                # If the revolver is in the shooting animation
+                back_cycle = 162
+            
             for i in range(5):
                 # Calculate the position of each bullet
                 bullet_angle = math.radians(
-                    angle * i) + math.radians(90) - math.radians(self.cylinder_spin)
+                    angle * i) + math.radians(back_cycle) - math.radians(self.cylinder_spin)
+                # Calculate the bullet's position based on the angle
                 bullet_x = center[0] + \
                     cylinder_radius // 2 * math.cos(bullet_angle)
                 bullet_y = center[1] + \
                     cylinder_radius // 2 * math.sin(bullet_angle)
 
-                # Draw the bullet
-                if chamber[i] == 1:
+                # Draw the bullet starting from the top of the cylinder
+                top_bullet = chamber[i - (self.cylinder_spin // 72) % 5]
+                if top_bullet == 1:
                     arcade.draw_circle_filled(
                         bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
                 else:
@@ -541,8 +554,6 @@ class Game(arcade.Window):
                 # Draw the bullet outline
                 arcade.draw_circle_outline(
                     bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK, 2)
-
-                ammo -= 1
 
             # ========================GAME_INFO========================== #
 
@@ -578,6 +589,15 @@ class Game(arcade.Window):
                 arcade.color.WHITE,
                 12,
             )
+            # display time
+            arcade.draw_text(
+                f"Time: {self.time:.2f}",
+                self.screen_width - 100,
+                self.screen_height - 40,
+                arcade.color.WHITE,
+                12,
+            )
+            
             # Display Current Speed (Acceleration)
             arcade.draw_text(
                 f"Current Speed: {self.current_speed:.2f}",
@@ -592,6 +612,15 @@ class Game(arcade.Window):
     def on_update(self, delta_time: float):
         # Update object list
         self.objects.sort(key=self.get_distance, reverse=True)
+        
+        # Update the time
+        self.time += delta_time
+
+        # # Update animations
+        # if self.enemy1_anim[1]["name"] == "idle":
+        #     # it take in the path
+        #     node_map = gltf_utils.get_node_map(self, f"{self.file_dir}/models/crazy_boy.gltf")
+        #     gltf_utils.animate(self, self.enemy1_anim, self.time, node_map)
 
         # Update the revolver animation frame
         if self.is_ADS:
@@ -852,10 +881,8 @@ class Game(arcade.Window):
             self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
         elif key == arcade.key.R:
             # Reload the revolver
-            if self.ammo < self.max_ammo:
-                self.ammo += 1
-                if self.ammo > self.max_ammo:
-                    self.ammo = self.max_ammo
+            if len(self.chamber) < self.max_ammo:
+                self.chamber.append(1)  # Add a bullet to the chamber
         elif key == arcade.key.Q:
             self.cylinder_spin += 72  # Spin the cylinder
 
@@ -867,8 +894,10 @@ class Game(arcade.Window):
     def on_mouse_press(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_LEFT:
             # check if there are ammo
-            if self.ammo > 0:
-                self.ammo -= 1
+            if len([bullet for bullet in self.chamber if bullet > 0]) > 0:
+                # Decrease ammo count
+                self.chamber.pop(0)
+
                 if not self.weapon_anim_running:  # Start the animation only if it's not already running
                     self.weapon_anim_running = True
                     self.current_frame = 0  # Reset to the first frame
@@ -893,7 +922,7 @@ class Game(arcade.Window):
                     # Add the projectile to the list of objects
                     self.objects.append(projectile)
 
-                    # Decrease ammo count
+                    
 
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed

@@ -129,8 +129,24 @@ def load_gltf(self, gltf_path, bin_path, scale=Vec3(1.0, 1.0, 1.0)):
                 "base_color_factor": base_color_factor,
                 "base_color_texture": base_color_texture
             })
-    print(geometries)
+            
+    
     return geometries
+
+def get_node_map(self, gltf_path):
+    """
+    Create a mapping of node indices to their corresponding GLTF nodes.
+    """
+    gltf = GLTF2().load(gltf_path)
+    node_map = {}
+    for i, node in enumerate(gltf.nodes):
+        node_map[i] = {
+            "name": node.name or f"Node_{i}",
+            "translation": node.translation or [0.0, 0.0, 0.0],
+            "rotation": node.rotation or [0.0, 0.0, 0.0, 1.0],
+            "scale": node.scale or [1.0, 1.0, 1.0]
+        }
+    return node_map
 
 def load_animations(self, gltf_path, bin_path):
     
@@ -195,10 +211,73 @@ def load_animations(self, gltf_path, bin_path):
             })
 
         animations.append(anim_data)
-        break  # Remove this break to load all animations
-
+       
     return animations
-    
-    
+
+# # Animation interpolation functions
+# import numpy as np
+# from scipy.spatial.transform import Rotation as R
+
+# def interpolate_linear(times, values, t):
+#     if t <= times[0]:
+#         return values[0]
+#     if t >= times[-1]:
+#         return values[-1]
+
+#     for i in range(1, len(times)):
+#         if t < times[i]:
+#             t0, t1 = times[i - 1], times[i]
+#             v0, v1 = values[i - 1], values[i]
+#             factor = (t - t0) / (t1 - t0)
+#             return tuple(v0[j] + factor * (v1[j] - v0[j]) for j in range(len(v0)))
+
+#     return values[-1]
+
+# def slerp_quaternion(q0, q1, t):
+#     r0 = R.from_quat(q0)
+#     r1 = R.from_quat(q1)
+#     return tuple(R.slerp(0, 1, [r0, r1])(t).as_quat())
+
+# def animate(self, animations, current_time, node_map):
+#     for anim in animations:
+#         for channel in anim["channels"]:
+#             times = channel["times"]
+#             values = channel["values"]
+#             path = channel["path"]
+#             node_index = channel["node"]
+#             interpolation = channel["interpolation"]
+
+#             # Skip if the node isn’t mapped
+#             if node_index not in node_map:
+#                 continue
+
+#             # Only LINEAR interpolation supported for now
+#             if interpolation != "LINEAR":
+#                 continue
+
+#             # Interpolate based on the path type
+#             if path == "rotation":
+#                 # SLERP for quaternions
+#                 if current_time <= times[0]:
+#                     value = values[0]
+#                 elif current_time >= times[-1]:
+#                     value = values[-1]
+#                 else:
+#                     for i in range(1, len(times)):
+#                         if current_time < times[i]:
+#                             t0, t1 = times[i - 1], times[i]
+#                             q0, q1 = values[i - 1], values[i]
+#                             factor = (current_time - t0) / (t1 - t0)
+#                             value = slerp_quaternion(q0, q1, factor)
+#                             break
+#                 node_map[node_index].set_rotation(value)
+
+#             elif path == "translation":
+#                 value = interpolate_linear(times, values, current_time)
+#                 node_map[node_index].set_position(value)
+
+#             elif path == "scale":
+#                 value = interpolate_linear(times, values, current_time)
+#                 node_map[node_index].set_scale(value)
     
     

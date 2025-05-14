@@ -193,7 +193,7 @@ class Game(arcade.Window):
 
     def setup(self):
         # Set the background color
-        arcade.set_background_color(arcade.color.SKY_BLUE)
+        arcade.set_background_color(arcade.color.DARK_BLUE_GRAY)
 
         self.fov = 90  # Field of view
         # set up the ground
@@ -216,16 +216,35 @@ class Game(arcade.Window):
                 ]
             )
         )
+
+        ceiling_buffer = self.ctx.buffer(
+            data=array(
+                'f',
+                [
+                    # Position         UV
+                    -60, 6, 60,       0, 60,  # Top Left
+                    -60, 6, -60,      0, 0,   # Bottom Left
+                    60, 6, 60,        60, 60,  # Top Right
+                    60, 6, -60,       60, 0,  # Bottom Right
+                ]
+            )
+        )
+
         # Create the ground geometry
         self.ground_geometry = self.ctx.geometry(
             content=[BufferDescription(
                 ground_buffer, "3f 2f", ("in_pos", "in_uv"))],
             mode=self.ctx.TRIANGLE_STRIP,
         )
+        self.ceiling_geometry = self.ctx.geometry(
+            content=[BufferDescription(
+                ceiling_buffer, "3f 2f", ("in_pos", "in_uv"))],
+            mode=self.ctx.TRIANGLE_STRIP,
+        )
 
         # Bind the ground texture to the shader program
         self.ground = self.plane
-
+        self.ceiling = self.plane
         # set up Camera
         self.camera_pos = Vec3(0, -4, -5)
         self.camera_rot = Vec3(0, 0, 0)
@@ -299,7 +318,7 @@ class Game(arcade.Window):
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
-            
+
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
             self.revolver_ADS_textures.append(
@@ -310,25 +329,29 @@ class Game(arcade.Window):
         # Initial position of the .obj model
         self.animation_time = 0  # Track the animation time
         self.enemies = level1.get_Enemies(self.GLTF_program)
-        
-        self.enemy1_anim = gltf_utils.load_animations(self, enemy1_path[0], enemy1_path[1])
+
+        self.enemy1_anim = gltf_utils.load_animations(
+            self, enemy1_path[0], enemy1_path[1])
 
         print(self.enemy1_anim[1]["name"])
-    
+
         # Add the enemy to the list of objects
         for enemy in self.enemies:
             self.objects.append(enemy)
             enemy["geometry"] = gltf_utils.load_gltf(
                 self, enemy1_path[0], enemy1_path[1], scale=Vec3(0.2, 0.2, 0.2))
 
-
         # Set ammos
         self.max_ammo = 5  # Maximum ammo count
         self.cylinder_spin = 0  # Cylinder spin angle
         self.chamber = []  # Chamber state (1 for loaded, 0 for empty)
-        
+
         # set time
         self.time = 0  # UNIVERSAL TIME
+
+        # set forward and right vectors
+        self.forward = Vec3(0, 0, 0)  # Forward vector
+        self.right = Vec3(0, 0, 0)  # Right vector
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
@@ -353,10 +376,15 @@ class Game(arcade.Window):
         # Bind the ground texture before rendering the ground
         self.texture1.use(0)
         self.ground["texture"] = 0
+        self.ceiling["texture"] = 0
 
         # Render the ground
         self.ground["model"] = translate @ rotate_y @ rotate_x @ rotate_z
         self.ground_geometry.render(self.ground)
+        # Render the ceiling
+        self.ceiling["model"] = translate @ rotate_y @ rotate_x @ rotate_z
+        self.ceiling_geometry.render(self.ceiling)
+
         # Sort walls and projectiles by distance from the player (nearest first)
         self.objects.sort(key=self.get_distance, reverse=True)
         # Render the objects
@@ -522,7 +550,7 @@ class Game(arcade.Window):
             # draw the cylinder bullets (5 bullets)
             angle = 360 / 5
 
-            # chamber is self.chamber's first 5 elements. 
+            # chamber is self.chamber's first 5 elements.
             # If self.chamber length is less than 5, fill the rest with 0
             chamber = self.chamber[:5] + [0] * (5 - len(self.chamber))
             # all bullets that are > 0
@@ -531,7 +559,7 @@ class Game(arcade.Window):
             if self.current_frame > 0:
                 # If the revolver is in the shooting animation
                 back_cycle = 162
-            
+
             for i in range(5):
                 # Calculate the position of each bullet
                 bullet_angle = math.radians(
@@ -547,6 +575,9 @@ class Game(arcade.Window):
                 if top_bullet == 1:
                     arcade.draw_circle_filled(
                         bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
+                elif top_bullet == 2:
+                    arcade.draw_circle_filled(
+                        bullet_x, bullet_y, cylinder_radius // 6, arcade.color.GOLD)
                 else:
                     arcade.draw_circle_filled(
                         bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK)
@@ -597,7 +628,7 @@ class Game(arcade.Window):
                 arcade.color.WHITE,
                 12,
             )
-            
+
             # Display Current Speed (Acceleration)
             arcade.draw_text(
                 f"Current Speed: {self.current_speed:.2f}",
@@ -612,7 +643,7 @@ class Game(arcade.Window):
     def on_update(self, delta_time: float):
         # Update object list
         self.objects.sort(key=self.get_distance, reverse=True)
-        
+
         # Update the time
         self.time += delta_time
 
@@ -697,7 +728,7 @@ class Game(arcade.Window):
         right_x = math.cos(rotation_y)
         right_z = math.sin(rotation_y)
 
-        # Set the forward and right vectors
+        # Set the forward and right vectors to the camera's rotation
         self.forward = Vec3(forward_x, 0, forward_z)
         self.right = Vec3(right_x, 0, right_z)
 
@@ -715,9 +746,9 @@ class Game(arcade.Window):
         # Normalize the movement vector to ensure consistent speed
         if self.movement_vector.mag > 0:
             # Normalize the movement vector and Accelerate
-            if self.is_on_ground:
+            if self.is_on_ground and not self.is_sliding:
                 self.current_speed -= (self.deceleration *
-                                       delta_time)  # Decelerate
+                                       delta_time) * 0.5  # Decelerate
             else:
                 self.current_speed += (self.acceleration *
                                        delta_time)  # Accelerate
@@ -754,9 +785,11 @@ class Game(arcade.Window):
         # Handle sliding
         if self.is_sliding:
             self.movement_vector = self.slide_dir.normalize().scale(
-                self.slide_speed)
+                self.slide_speed + self.current_speed)
             self.slide_speed -= self.deceleration * \
                 delta_time * 0.5  # Decrease slide speed over time
+            if self.current_speed < self.max_speed // 2:
+                self.current_speed += self.acceleration * delta_time
             if self.slide_speed < 0:
                 self.slide_speed = 0  # Prevent negative slide speed
         else:
@@ -871,7 +904,7 @@ class Game(arcade.Window):
                 if self.slide_dir.mag == 0:
                     self.slide_dir = self.forward
         elif key == arcade.key.SPACE:  # Jump
-            if self.is_on_ground:  # Only allow jumping if on the ground
+            if self.is_on_ground or self.camera_pos.y > -1:  # Only allow jumping if on the ground
                 print("Jumping!")
                 self.is_on_ground = False  # Set the flag to false when jumping
                 self.vertical_velocity = -0.3  # Set jump power
@@ -895,38 +928,128 @@ class Game(arcade.Window):
         if button == arcade.MOUSE_BUTTON_LEFT:
             # check if there are ammo
             if len([bullet for bullet in self.chamber if bullet > 0]) > 0:
-                # Decrease ammo count
-                self.chamber.pop(0)
-
                 if not self.weapon_anim_running:  # Start the animation only if it's not already running
+
+                    # Decrease ammo count
+                    self.chamber.pop(0)
+
                     self.weapon_anim_running = True
                     self.current_frame = 0  # Reset to the first frame
 
-                    # shoot projectile
-                    projectile = {
-                        "id": 4,
-                        "model": Vec3(-self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z),
-                        "velocity": Vec3(0, 0, 0),
-                        "program": self.sphere_program,
-                        "geometry": self.generate_sphere(
-                            0.1, 10, 10, position=self.camera_pos),
-                    }
-                    # Set the projectile's velocity based on the camera direction
-                    projectile["velocity"] = Vec3(
+                    # # shoot projectile
+                    # projectile = {
+                    #     "id": 4,
+                    #     "model": Vec3(-self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z),
+                    #     "velocity": Vec3(0, 0, 0),
+                    #     "program": self.sphere_program,
+                    #     "geometry": self.generate_sphere(
+                    #         0.1, 10, 10, position=self.camera_pos),
+                    # }
+                    # # Set the projectile's velocity based on the camera direction
+                    # projectile["velocity"] = Vec3(
+                    #     math.sin(self.camera_rot.y),
+                    #     -math.sin(self.camera_rot.x),
+                    #     -math.cos(self.camera_rot.y),
+                    # )
+
+                    # self.projectiles.append(projectile)
+                    # # Add the projectile to the list of objects
+                    # self.objects.append(projectile)
+
+                    # raycast amd get the object hit
+                    ray_start = Vec3(
+                        self.camera_pos.x,
+                        self.camera_pos.y,
+                        self.camera_pos.z
+                    )
+                    ray_direction = Vec3(
                         math.sin(self.camera_rot.y),
                         -math.sin(self.camera_rot.x),
                         -math.cos(self.camera_rot.y),
                     )
-
-                    self.projectiles.append(projectile)
-                    # Add the projectile to the list of objects
-                    self.objects.append(projectile)
-
-                    
+                    raycast_result = self.raycast(ray_start, ray_direction)
+                    if raycast_result:
+                        print("Hit object:", raycast_result)
 
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed
             self.is_ADS = True
+
+    def ray_intersects_aabb(self, ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z):
+        t_min = (min_x - ray_start.x) / \
+            ray_direction.x if ray_direction.x != 0 else float('-inf')
+        t_max = (max_x - ray_start.x) / \
+            ray_direction.x if ray_direction.x != 0 else float('inf')
+
+        if t_min > t_max:
+            t_min, t_max = t_max, t_min
+
+        ty_min = (min_y - ray_start.y) / \
+            ray_direction.y if ray_direction.y != 0 else float('-inf')
+        ty_max = (max_y - ray_start.y) / \
+            ray_direction.y if ray_direction.y != 0 else float('inf')
+
+        if ty_min > ty_max:
+            ty_min, ty_max = ty_max, ty_min
+
+        if (t_min > ty_max) or (ty_min > t_max):
+            return False, None
+
+        if ty_min > t_min:
+            t_min = ty_min
+        if ty_max < t_max:
+            t_max = ty_max
+
+        tz_min = (min_z - ray_start.z) / \
+            ray_direction.z if ray_direction.z != 0 else float('-inf')
+        tz_max = (max_z - ray_start.z) / \
+            ray_direction.z if ray_direction.z != 0 else float('inf')
+
+        if tz_min > tz_max:
+            tz_min, tz_max = tz_max, tz_min
+
+        if (t_min > tz_max) or (tz_min > t_max):
+            return False, None
+
+        if tz_min > t_min:
+            t_min = tz_min
+        if tz_max < t_max:
+            t_max = tz_max
+
+        if t_min < 0 and t_max < 0:
+            return False, None  # Both intersections are behind the ray
+
+        return True, t_min if t_min > 0 else t_max
+
+    def raycast(self, ray_start, ray_direction):
+        ray_length = 100  # Maximum ray length
+        ray_end = (ray_start + ray_direction).normalize().scale(ray_length)
+
+        closest_hit = None
+        closest_distance = float('inf')
+
+        # Iterate through all objects in the scene
+        for obj in self.objects:
+            if obj["id"] == 1:  # Wall
+                positions = obj["buffer_data"]
+                num_vertices = len(positions) // 5
+
+                # Check for intersection with the wall's bounding box
+                min_x = min(positions[i * 5] for i in range(num_vertices))
+                max_x = max(positions[i * 5] for i in range(num_vertices))
+                min_y = min(positions[i * 5 + 1] for i in range(num_vertices))
+                max_y = max(positions[i * 5 + 1] for i in range(num_vertices))
+                min_z = min(positions[i * 5 + 2] for i in range(num_vertices))
+                max_z = max(positions[i * 5 + 2] for i in range(num_vertices))
+
+                hit, distance = self.ray_intersects_aabb(
+                    ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z
+                )
+                if hit and distance < closest_distance:
+                    closest_hit = obj
+                    closest_distance = distance
+
+        return closest_hit
 
     def on_mouse_release(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:

@@ -647,6 +647,10 @@ class Game(arcade.Window):
         # Update the time
         self.time += delta_time
 
+        # set mouse active
+        self.set_mouse_visible(not self.mouse_locked)
+        self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
+
         # # Update animations
         # if self.enemy1_anim[1]["name"] == "idle":
         #     # it take in the path
@@ -677,7 +681,10 @@ class Game(arcade.Window):
 
             # Update the revolver animation frame
             if self.current_frame < 3:
-                self.camera_rot.x -= 0.01  # Adjust the camera rotation for the animation
+                if self.is_ADS:
+                    self.camera_rot.x -= 0.005  # Adjust the camera rotation for the animation
+                else:
+                    self.camera_rot.x -= 0.01  # Adjust the camera rotation for the animation
             # Update the time accumulator
             self.time_since_last_frame += 0.5
             # Check if it's time to update the frame
@@ -958,9 +965,9 @@ class Game(arcade.Window):
 
                     # raycast amd get the object hit
                     ray_start = Vec3(
-                        self.camera_pos.x,
-                        self.camera_pos.y,
-                        self.camera_pos.z
+                        -self.camera_pos.x,
+                        -self.camera_pos.y,
+                        -self.camera_pos.z
                     )
                     ray_direction = Vec3(
                         math.sin(self.camera_rot.y),
@@ -1022,7 +1029,7 @@ class Game(arcade.Window):
         return True, t_min if t_min > 0 else t_max
 
     def raycast(self, ray_start, ray_direction):
-        ray_length = 100  # Maximum ray length
+        ray_length = 1000  # Maximum ray length
         ray_end = (ray_start + ray_direction).normalize().scale(ray_length)
 
         closest_hit = None

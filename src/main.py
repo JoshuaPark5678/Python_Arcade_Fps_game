@@ -40,6 +40,8 @@ class Game(arcade.Window):
         self.set_location(50, 50)  # X=100, Y=100
         # Enable depth testing
         self.ctx.enable(self.ctx.DEPTH_TEST)
+        # Set blending mode
+        self.ctx.enable(self.ctx.BLEND)
         # Set textures to None initially
         self.texture1 = None
         self.texture2 = None
@@ -105,15 +107,17 @@ class Game(arcade.Window):
             """,
             fragment_shader="""
             #version 330
-            in vec3 frag_pos;  // Fragment position from the vertex shader
-            in vec3 normal;    // Normal from the vertex shader
             in vec2 uv;        // UV coordinates from the vertex shader
             out vec4 fragColor;
 
             uniform sampler2D texture;  // Texture sampler
-
+            uniform float opacity;  // Opacity from the vertex shader
+            
             void main() {
-                fragColor = texture2D(texture, uv);  // Sample the texture using UV coordinates
+                // fragColor = texture2D(texture, uv);  // Sample the texture using UV coordinates
+                vec4 tex = texture2D(texture, uv);
+                tex.a *= opacity; // Apply opacity
+                fragColor = tex;
             }
             """,
         )
@@ -167,8 +171,8 @@ class Game(arcade.Window):
         wall_texture = arcade.load_texture(
             f"{self.file_dir}/texture/default2.png"
         )
-        cat_texture = arcade.load_texture(
-            f"{self.file_dir}/texture/cat1.jpg"
+        door_texture = arcade.load_texture(
+            f"{self.file_dir}/texture/green_door.png"
         )
         self.texture1 = self.ctx.texture(
             size=(ground_texture.width, ground_texture.height),
@@ -181,9 +185,9 @@ class Game(arcade.Window):
             data=wall_texture.image.tobytes(),
         )
         self.texture3 = self.ctx.texture(
-            size=(cat_texture.width, cat_texture.height),
+            size=(door_texture.width, door_texture.height),
             components=4,
-            data=cat_texture.image.tobytes(),
+            data=door_texture.image.tobytes(),
         )
 
         # Set the texture filtering mode to GL_NEAREST to remove blurriness
@@ -272,6 +276,19 @@ class Game(arcade.Window):
                 content=[BufferDescription(
                     wall_buffer, "3f 2f", ("in_pos", "in_uv"))],
                 mode=self.ctx.TRIANGLE_STRIP,  # Use TRIANGLE_STRIP for walls
+            )
+
+        self.doors = level1.get_doors(self.plane)
+
+        # Add the doors to the list of objects
+        for door in self.doors:
+            self.objects.append(door)
+            door_buffer = self.ctx.buffer(data=array('f', door["buffer_data"]))
+            door["id"] = 2
+            door["geometry"] = self.ctx.geometry(
+                content=[BufferDescription(
+                    door_buffer, "3f 2f", ("in_pos", "in_uv"))],
+                mode=self.ctx.TRIANGLE_STRIP,  # Use TRIANGLE_STRIP for doors
             )
 
         # Movement flags
@@ -376,6 +393,7 @@ class Game(arcade.Window):
         # Bind the ground texture before rendering the ground
         self.texture1.use(0)
         self.ground["texture"] = 0
+        self.ground["opacity"] = 1.0
         self.ceiling["texture"] = 0
 
         # Render the ground
@@ -393,19 +411,19 @@ class Game(arcade.Window):
                 # Bind the wall texture to the shader program
                 self.texture2.use(obj["texture"])
                 obj["program"]["texture"] = obj["texture"]
+                obj["program"]["opacity"] = obj["opacity"]
                 obj["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z
                 obj["geometry"].render(obj["program"])
             elif obj["id"] == 2:
-                # Render the sphere
-                obj["program"]["projection"] = self.proj
+                # Bind the wall texture to the shader program
+                self.texture3.use(obj["texture"])
+                obj["program"]["texture"] = obj["texture"]
+                obj["program"]["opacity"] = obj["opacity"]
                 obj["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z
                 obj["geometry"].render(obj["program"])
             elif obj["id"] == 3:
-                # Bind the cat texture to the shader program
-                self.texture3.use(obj["texture"])
-                obj["program"]["texture"] = obj["texture"]
-                obj["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z
-                obj["geometry"].render(obj["program"])
+                # TBD
+                print("TBD")
             elif obj["id"] == 4:
                 # Render projectiles
                 obj["program"]["projection"] = self.proj
@@ -853,6 +871,54 @@ class Game(arcade.Window):
                 overlap = camera_radius - distance
                 self.camera_pos += normal.scale(overlap * 0.001)
 
+        for door in self.doors:
+            if door["lock"]:
+                positions = door["buffer_data"]
+                num_vertices = len(positions) // 5
+
+                # Calculate the bounding box of the door
+                min_x = min(positions[i * 5] for i in range(num_vertices))
+                max_x = max(positions[i * 5] for i in range(num_vertices))
+                min_y = min(positions[i * 5 + 1] for i in range(num_vertices))
+                max_y = max(positions[i * 5 + 1] for i in range(num_vertices))
+                min_z = min(positions[i * 5 + 2] for i in range(num_vertices))
+                max_z = max(positions[i * 5 + 2] for i in range(num_vertices))
+
+                # Check for overlap between the camera sphere and the door's bounding box
+                closest_x = max(min_x, min(-self.camera_pos.x, max_x))
+                closest_y = max(min_y, min(-self.camera_pos.y, max_y))
+                closest_z = max(min_z, min(-self.camera_pos.z, max_z))
+
+                distance_x = -self.camera_pos.x - closest_x
+                distance_y = -self.camera_pos.y - closest_y
+                distance_z = -self.camera_pos.z - closest_z
+
+                distance = math.sqrt(
+                    distance_x ** 2 + distance_y ** 2 + distance_z ** 2)
+
+                if distance < camera_radius:
+                    # Calculate the normal of the wall's surface
+                    normal = Vec3(distance_x, distance_y,
+                                  distance_z).normalize()
+
+                    # Adjust movement vector to slide along the wall
+                    dot_product = self.movement_vector.dot(normal)
+                    if dot_product > 0:
+                        # Calculate the projection of the movement vector onto the wall's normal
+                        self.movement_vector -= normal.scale(abs(dot_product))
+                        # Apply deceleration to the current speed
+                        self.current_speed -= self.deceleration * delta_time * 0.1
+                        if self.current_speed < 0:
+                            self.current_speed = 0  # Prevent negative speed
+
+                    if distance < 0.3:
+                        # Push the camera slightly out of the wall to avoid getting stuck
+                        overlap = camera_radius - distance - 5
+                        self.camera_pos += normal.scale(overlap * 0.001)
+                    # Push the camera slightly out of the wall to avoid getting stuck
+                    overlap = camera_radius - distance
+                    self.camera_pos += normal.scale(overlap * 0.001)
+
         # Stop vertical velocity if on the ground
         self.camera_pos.y += self.vertical_velocity
         if self.is_sliding:
@@ -925,6 +991,18 @@ class Game(arcade.Window):
                 self.chamber.append(1)  # Add a bullet to the chamber
         elif key == arcade.key.Q:
             self.cylinder_spin += 72  # Spin the cylinder
+
+        elif key == arcade.key.UP:
+            for obj in self.objects:
+                if obj["id"] == 2:
+                    obj["opacity"] += 0.1
+        elif key == arcade.key.DOWN:
+            for obj in self.objects:
+                if obj["id"] == 2:
+                    obj["opacity"] -= 0.1
+        elif key == arcade.key.T:
+            for door in self.doors:
+                door["lock"] = not door["lock"]  # Toggle door lock state
 
     def on_mouse_motion(self, x, y, dx, dy):
         if self.mouse_locked:
@@ -1156,12 +1234,25 @@ class Game(arcade.Window):
                 (self.camera_pos.z + center.z) ** 2
             )
         elif object["id"] == 2:
-            # Sphere has only one vertex (x, y, z)
-            sphere_position = object["model"]
+            # Calculate the center of the door by averaging all vertices' coordinates
+            positions = object["buffer_data"]
+            # Planes have 20 vertices (x, y, z, u, v)
+            num_vertices = len(positions) // 5
+
+            center_x = sum(positions[i * 5]
+                           for i in range(num_vertices)) / num_vertices
+            center_y = sum(positions[i * 5 + 1]
+                           for i in range(num_vertices)) / num_vertices
+            center_z = sum(positions[i * 5 + 2]
+                           for i in range(num_vertices)) / num_vertices
+
+            center = Vec3(center_x, center_y, center_z)
+
+            # Calculate the distance between the camera and the wall's center
             distance = math.sqrt(
-                (self.camera_pos.x + sphere_position[0]) ** 2 +
-                (self.camera_pos.y + sphere_position[1]) ** 2 +
-                (self.camera_pos.z + sphere_position[2]) ** 2
+                (self.camera_pos.x + center.x) ** 2 +
+                (self.camera_pos.y + center.y) ** 2 +
+                (self.camera_pos.z + center.z) ** 2
             )
         elif object["id"] == 4:
             # Projectiles have only one vertex (x, y, z)

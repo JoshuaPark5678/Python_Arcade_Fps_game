@@ -392,13 +392,13 @@ def get_doors(program):
             "lock": True,
             "program": program,  # Use the passed program
             "texture": 3,
-            "opacity": 1.0,
+            "opacity": .9,
             "buffer_data": [
                 # Position         UV
-                -4, -2, -16,       0, 1,  # Bottom Left
-                -4, 6, -16,        0, 0,   # Top Left
-                -4, -2, -28,       1, 1,  # Bottom Right
-                -4, 6, -28,        1, 0,  # Top Right
+                16, -2, -4,       0, 1,  # Bottom Left
+                16, 6, -4,        0, 0,   # Top Left
+                28, -2, -4,       1, 1,  # Bottom Right
+                28, 6, -4,        1, 0,   # Top Right
             ],
         }
     ]

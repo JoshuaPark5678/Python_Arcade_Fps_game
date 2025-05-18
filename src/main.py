@@ -13,6 +13,8 @@ import os
 # Import the necessary files
 import level1
 import gltf_utils
+import raycast
+
 
 # Constants for screen dimensions
 SCREEN_WIDTH = 1280
@@ -202,7 +204,7 @@ class Game(arcade.Window):
         self.fov = 90  # Field of view
         # set up the ground
         self.proj = Mat4.perspective_projection(
-            self.aspect_ratio, 0.1, 500, fov=self.fov,  # Set the field of view
+            self.aspect_ratio, 0.01, 500, fov=self.fov,  # Set the field of view
         )
         # Set up the model matrix for the ground
         self.plane["projection"] = self.proj
@@ -328,10 +330,13 @@ class Game(arcade.Window):
         # revolver animation
         self.revolver_textures = []  # List to store all textures for the animation
         self.revolver_ADS_textures = []  # List to store all textures for the ADS animation
+        self.revolver_ADS_transition_textures = []  # List to store all textures for the ADS transition animation
         self.current_frame = 0  # Current frame index
         self.animation_speed = 0.1  # Time (in seconds) between frames
         self.time_since_last_frame = 0  # Time accumulator for frame updates
         self.weapon_anim_running = False  # Flag to control animation
+        self.revolver_in_transition = False  # Flag to control transition animation
+        self.revolver_transition_frame = 0 # Frame index for the transition animation
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
@@ -340,6 +345,11 @@ class Game(arcade.Window):
             texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
             self.revolver_ADS_textures.append(
                 arcade.load_texture(texture_path))
+            
+        for i in range(1, 9):  # Assuming the images are named 0001.png to 0008.png
+            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_transition/{i:04d}.png"
+            self.revolver_ADS_transition_textures.append(arcade.load_texture(texture_path))
+            
         print("Revolver textures loaded")
         enemy1_path = [f"{self.file_dir}/models/crazy_boy.gltf",
                        f"{self.file_dir}/models/crazy_boy.bin"]
@@ -384,7 +394,7 @@ class Game(arcade.Window):
 
         # FOV update
         self.proj = Mat4.perspective_projection(
-            self.aspect_ratio, 0.1, 500, fov=self.fov,  # Set the field of view
+            self.aspect_ratio, 0.01, 500, fov=self.fov,  # Set the field of view
         )
         self.plane["projection"] = self.proj
         self.sphere_program["projection"] = self.proj
@@ -475,12 +485,24 @@ class Game(arcade.Window):
         try:
             # ==========================UI========================= #
             # =======================WEAPON======================== #
-            if self.is_ADS:
-                # If aiming down sights, use the ADS textures
-                current_texture = self.revolver_ADS_textures[self.current_frame]
+            
+            # If the revolver is in transition, use the transition textures
+            # transition anim is 8 frames contrary to the 16 frames of the shooting anim
+            if self.revolver_in_transition and self.is_ADS:
+                # If aiming down sights, use the ADS transition textures
+                current_texture = self.revolver_ADS_transition_textures[abs(self.revolver_transition_frame)]
+            elif self.revolver_in_transition:
+                # If not aiming down sights, use the transition in reverse
+                current_texture = self.revolver_ADS_transition_textures[abs(self.revolver_transition_frame-8)]
+            
             else:
-                # If not aiming down sights, use the regular textures
-                current_texture = self.revolver_textures[self.current_frame]
+                # If the revolver is not in transition, use the regular textures
+                if self.is_ADS:
+                    # If aiming down sights, use the ADS textures
+                    current_texture = self.revolver_ADS_textures[self.current_frame]
+                else:
+                    # If not aiming down sights, use the regular textures
+                    current_texture = self.revolver_textures[self.current_frame]
             # Draw the revolver texture
             arcade.draw_texture_rectangle(
                 # X position (center of the screen)
@@ -688,6 +710,16 @@ class Game(arcade.Window):
                 self.fov += 3
             self.mouse_sensitivity = 0.001
 
+        if self.revolver_in_transition:
+            # Update the transition animation frame
+            if self.revolver_transition_frame < 4:
+                self.revolver_transition_frame += 2
+            else:
+                self.revolver_transition_frame += 1
+            if self.revolver_transition_frame >= len(self.revolver_ADS_transition_textures):
+                self.revolver_in_transition = False
+                self.revolver_transition_frame = 0  # Reset the transition frame
+        
         if self.weapon_anim_running:
             # Calculate the spin based on the current frame
             # 12 frames to spin 72 degrees
@@ -1052,93 +1084,19 @@ class Game(arcade.Window):
                         -math.sin(self.camera_rot.x),
                         -math.cos(self.camera_rot.y),
                     )
-                    raycast_result = self.raycast(ray_start, ray_direction)
+                    raycast_result = raycast.raycast(self, ray_start, ray_direction)
                     if raycast_result:
                         print("Hit object:", raycast_result)
 
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed
+            self.revolver_in_transition = True
             self.is_ADS = True
-
-    def ray_intersects_aabb(self, ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z):
-        t_min = (min_x - ray_start.x) / \
-            ray_direction.x if ray_direction.x != 0 else float('-inf')
-        t_max = (max_x - ray_start.x) / \
-            ray_direction.x if ray_direction.x != 0 else float('inf')
-
-        if t_min > t_max:
-            t_min, t_max = t_max, t_min
-
-        ty_min = (min_y - ray_start.y) / \
-            ray_direction.y if ray_direction.y != 0 else float('-inf')
-        ty_max = (max_y - ray_start.y) / \
-            ray_direction.y if ray_direction.y != 0 else float('inf')
-
-        if ty_min > ty_max:
-            ty_min, ty_max = ty_max, ty_min
-
-        if (t_min > ty_max) or (ty_min > t_max):
-            return False, None
-
-        if ty_min > t_min:
-            t_min = ty_min
-        if ty_max < t_max:
-            t_max = ty_max
-
-        tz_min = (min_z - ray_start.z) / \
-            ray_direction.z if ray_direction.z != 0 else float('-inf')
-        tz_max = (max_z - ray_start.z) / \
-            ray_direction.z if ray_direction.z != 0 else float('inf')
-
-        if tz_min > tz_max:
-            tz_min, tz_max = tz_max, tz_min
-
-        if (t_min > tz_max) or (tz_min > t_max):
-            return False, None
-
-        if tz_min > t_min:
-            t_min = tz_min
-        if tz_max < t_max:
-            t_max = tz_max
-
-        if t_min < 0 and t_max < 0:
-            return False, None  # Both intersections are behind the ray
-
-        return True, t_min if t_min > 0 else t_max
-
-    def raycast(self, ray_start, ray_direction):
-        ray_length = 1000  # Maximum ray length
-        ray_end = (ray_start + ray_direction).normalize().scale(ray_length)
-
-        closest_hit = None
-        closest_distance = float('inf')
-
-        # Iterate through all objects in the scene
-        for obj in self.objects:
-            if obj["id"] == 1:  # Wall
-                positions = obj["buffer_data"]
-                num_vertices = len(positions) // 5
-
-                # Check for intersection with the wall's bounding box
-                min_x = min(positions[i * 5] for i in range(num_vertices))
-                max_x = max(positions[i * 5] for i in range(num_vertices))
-                min_y = min(positions[i * 5 + 1] for i in range(num_vertices))
-                max_y = max(positions[i * 5 + 1] for i in range(num_vertices))
-                min_z = min(positions[i * 5 + 2] for i in range(num_vertices))
-                max_z = max(positions[i * 5 + 2] for i in range(num_vertices))
-
-                hit, distance = self.ray_intersects_aabb(
-                    ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z
-                )
-                if hit and distance < closest_distance:
-                    closest_hit = obj
-                    closest_distance = distance
-
-        return closest_hit
 
     def on_mouse_release(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is released
+            self.revolver_in_transition = True
             self.is_ADS = False
 
     def on_key_release(self, key, modifiers):

@@ -48,40 +48,51 @@ class Game(arcade.Window):
         self.texture1 = None
         self.texture2 = None
         self.texture3 = None
+
         try:
             # Shader program for the object
             self.GLTF_program = self.ctx.program(
                 vertex_shader="""
                 #version 330
+
                 uniform mat4 projection;
                 uniform mat4 model;
-                in vec3 in_pos;
-                in vec2 in_uv;  // Add UV attribute
+                uniform mat4 u_joint_matrices[16]; // Adjust size if needed
 
-                out vec2 uv;  // Pass UV coordinates to the fragment shader
+                in vec3 in_pos;
+                in vec2 in_uv;
+                in uvec4 in_joints;
+                in vec4 in_weights;
+
+                out vec2 uv;
 
                 void main() {
-                    gl_Position = projection * model * vec4(in_pos, 1.0);
-                    uv = in_uv;  // Pass UV coordinates
+                    mat4 skin =
+                        u_joint_matrices[in_joints.x] * in_weights.x +
+                        u_joint_matrices[in_joints.y] * in_weights.y +
+                        u_joint_matrices[in_joints.z] * in_weights.z +
+                        u_joint_matrices[in_joints.w] * in_weights.w;
+
+                    vec4 skinned_pos = skin * vec4(in_pos, 1.0);
+                    if (length(skinned_pos) == 0.0) {
+                        skinned_pos = vec4(in_pos, 1.0);
+                    }
+                    // Apply the model and projection matrices
+                    gl_Position = projection * model * skinned_pos;
+
+                    uv = in_uv;
                 }
                 """,
                 fragment_shader="""
                 #version 330
 
                 uniform vec4 base_color_factor;  // Base color (RGBA)
-                uniform sampler2D base_color_texture;  // Base color texture
-                uniform bool has_base_color_texture;  // Flag to check if texture exists
 
                 in vec2 uv;  // UV coordinates from the vertex shader
                 out vec4 fragColor;
 
                 void main() {
                     vec4 base_color = base_color_factor;
-
-                    // If a base color texture exists, sample it
-                    if (has_base_color_texture) {
-                        base_color *= texture(base_color_texture, uv);
-                    }
 
                     fragColor = base_color;  // Output the final color
                 }
@@ -351,22 +362,22 @@ class Game(arcade.Window):
             self.revolver_ADS_transition_textures.append(arcade.load_texture(texture_path))
             
         print("Revolver textures loaded")
-        enemy1_path = [f"{self.file_dir}/models/crazy_boy.gltf",
-                       f"{self.file_dir}/models/crazy_boy.bin"]
-        # Initial position of the .obj model
-        self.animation_time = 0  # Track the animation time
+        enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
+                       f"{self.file_dir}/models/crazy_boy_test.bin"]
+        
+        # Initialize the enemy list
         self.enemies = level1.get_Enemies(self.GLTF_program)
 
-        self.enemy1_anim = gltf_utils.load_animations(
-            self, enemy1_path[0], enemy1_path[1])
+        self.enemy1_gltf = GLTF2().load(enemy1_path[0])
 
-        print(self.enemy1_anim[1]["name"])
+        with open(enemy1_path[1], "rb") as f:
+            self.enemy1_bin_data = f.read()
 
         # Add the enemy to the list of objects
         for enemy in self.enemies:
             self.objects.append(enemy)
             enemy["geometry"] = gltf_utils.load_gltf(
-                self, enemy1_path[0], enemy1_path[1], scale=Vec3(0.2, 0.2, 0.2))
+                self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
 
         # Set ammos
         self.max_ammo = 5  # Maximum ammo count
@@ -443,6 +454,7 @@ class Game(arcade.Window):
 
             # Render the enemy object
             elif obj["id"] == 10:  # Render enemy objects
+                # Bind the GLTF program
                 obj["program"]["projection"] = self.proj
 
                 # Rotate the object around the Y-axis
@@ -451,29 +463,17 @@ class Game(arcade.Window):
 
                 translation = (Mat4.from_translation(
                     self.camera_pos) @ Mat4.from_translation(obj["buffer_data"]))
+                
                 # Final model matrix
                 obj["program"]["model"] = (
                     # Apply camera rotation
                     (translation + object_rotation_matrix)
                     @ (rotate_y @ rotate_x @ rotate_z))
 
-                # obj order
-                # 0 and 1 = eyebrows
-                # 2 = body
-                # 3 to 6 = eyes
-                # the eyes and eyebrows should be rendered first if looked at from the front
-
                 for enemy_geometry in obj["geometry"]:
 
                     # Set material properties
                     obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
-
-                    if enemy_geometry["base_color_texture"]:
-                        enemy_geometry["base_color_texture"].use(0)
-                        obj["program"]["base_color_texture"] = 0
-                        obj["program"]["has_base_color_texture"] = True
-                    else:
-                        obj["program"]["has_base_color_texture"] = False
 
                     # Render the geometry
                     enemy_geometry["geometry"].render(obj["program"])
@@ -493,7 +493,7 @@ class Game(arcade.Window):
                 current_texture = self.revolver_ADS_transition_textures[abs(self.revolver_transition_frame)]
             elif self.revolver_in_transition:
                 # If not aiming down sights, use the transition in reverse
-                current_texture = self.revolver_ADS_transition_textures[abs(self.revolver_transition_frame-8)]
+                current_texture = self.revolver_ADS_transition_textures[abs(self.revolver_transition_frame-7)]
             
             else:
                 # If the revolver is not in transition, use the regular textures
@@ -690,13 +690,8 @@ class Game(arcade.Window):
         # set mouse active
         self.set_mouse_visible(not self.mouse_locked)
         self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
-
-        # # Update animations
-        # if self.enemy1_anim[1]["name"] == "idle":
-        #     # it take in the path
-        #     node_map = gltf_utils.get_node_map(self, f"{self.file_dir}/models/crazy_boy.gltf")
-        #     gltf_utils.animate(self, self.enemy1_anim, self.time, node_map)
-
+            
+            
         # Update the revolver animation frame
         if self.is_ADS:
             # Zoom in
@@ -711,11 +706,7 @@ class Game(arcade.Window):
             self.mouse_sensitivity = 0.001
 
         if self.revolver_in_transition:
-            # Update the transition animation frame
-            if self.revolver_transition_frame < 4:
-                self.revolver_transition_frame += 2
-            else:
-                self.revolver_transition_frame += 1
+            self.revolver_transition_frame += 1
             if self.revolver_transition_frame >= len(self.revolver_ADS_transition_textures):
                 self.revolver_in_transition = False
                 self.revolver_transition_frame = 0  # Reset the transition frame
@@ -1021,8 +1012,35 @@ class Game(arcade.Window):
             # Reload the revolver
             if len(self.chamber) < self.max_ammo:
                 self.chamber.append(1)  # Add a bullet to the chamber
+
+        elif key == arcade.key.F:
+            # print animation
+            for obj in self.objects:
+                if obj["id"] == 10:
+                    for i, node in enumerate(self.enemy1_gltf.nodes):
+                        node.translation = [0,0,0]
+                        obj["geometry"] = gltf_utils.load_gltf(self,
+                            self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
+                        
+                        
+                    
+
+        elif key == arcade.key.E:
+            for obj in self.objects:
+                if obj["id"] == 10:
+                    for i, node in enumerate(self.enemy1_gltf.nodes):
+                        obj["geometry"] = gltf_utils.load_gltf(self,
+                            self.enemy1_gltf, self.enemy1_bin_data)
+                            
+                            
+                            
+
         elif key == arcade.key.Q:
-            self.cylinder_spin += 72  # Spin the cylinder
+            # print nodes
+            for obj in self.objects:
+                if obj["id"] == 10:
+                    print(obj["geometry"])
+                        
 
         elif key == arcade.key.UP:
             for obj in self.objects:

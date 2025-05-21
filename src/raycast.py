@@ -78,5 +78,11 @@ def raycast(self, ray_start, ray_direction):
             if hit and distance < closest_distance:
                 closest_hit = obj
                 closest_distance = distance
+        
+        if obj["id"] == 10:
+            # gltf model
+            positions = obj["buffer_data"]
+            
+            
 
     return closest_hit

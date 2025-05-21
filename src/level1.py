@@ -381,7 +381,45 @@ def get_walls(program):
                 40, 6, -4,        uv, 0,  # Top Right
             ],
         },
-        
+        {
+            "name": "wall_029",
+            "program": program,  # Use the passed program
+            "texture": 1,
+            "opacity": 1.0,
+            "buffer_data": [
+                # Position         UV
+                28, -2, -4,       0, uv,  # Bottom Left
+                28, 6, -4,        0, 0,   # Top Left
+                28, -2, 8,        uv, uv,  # Bottom Right
+                28, 6, 8,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_030",
+            "program": program,  # Use the passed program
+            "texture": 1,
+            "opacity": 1.0,
+            "buffer_data": [
+                # Position         UV
+                28, -2, 8,        0, uv,  # Bottom Left
+                28, 6, 8,         0, 0,   # Top Left
+                16, -2, 8,        uv, uv,  # Bottom Right
+                16, 6, 8,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_031",
+            "program": program,  # Use the passed program
+            "texture": 1,
+            "opacity": 1.0,
+            "buffer_data": [
+                # Position         UV
+                16, -2, 8,        0, uv,  # Bottom Left
+                16, 6, 8,         0, 0,   # Top Left
+                4, -2, 8,        uv, uv,  # Bottom Right
+                4, 6, 8,         uv, 0,  # Top Right
+            ],
+        },
     ]
     return walls
 

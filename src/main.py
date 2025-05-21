@@ -388,7 +388,7 @@ class Game(arcade.Window):
         self.revolver_reload_frame = 0  # Frame index for the reload animation
 
         start = time.time()
-        
+
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
@@ -431,7 +431,8 @@ class Game(arcade.Window):
         # Set ammos
         self.max_ammo = 5  # Maximum ammo count
         self.cylinder_spin = 0  # Cylinder spin angle
-        self.chamber = []  # Chamber state (1 for loaded, 0 for empty)
+        # Chamber state (1 for loaded, 0 for empty)
+        self.chamber = [1] * self.max_ammo
 
         # set time
         self.time = 0  # UNIVERSAL TIME
@@ -542,11 +543,11 @@ class Game(arcade.Window):
                 current_texture = self.revolver_reload_textures[abs(
                     math.floor(self.revolver_reload_frame))]
             # transition anim is 8 frames contrary to the 16 frames of the shooting anim
-            elif self.revolver_in_transition and self.is_ADS:
+            elif self.revolver_in_transition and self.is_ADS and not self.revolver_in_reload:
                 # If aiming down sights, use the ADS transition textures
                 current_texture = self.revolver_ADS_transition_textures[abs(
                     self.revolver_transition_frame)]
-            elif self.revolver_in_transition:
+            elif self.revolver_in_transition and not self.is_ADS and not self.revolver_in_reload:
                 # If not aiming down sights, use the transition in reverse
                 current_texture = self.revolver_ADS_transition_textures[abs(
                     self.revolver_transition_frame-7)]
@@ -772,6 +773,9 @@ class Game(arcade.Window):
                 self.revolver_in_transition = False
                 self.revolver_transition_frame = 0  # Reset the transition frame
 
+            if self.revolver_transition_frame == len(self.revolver_ADS_transition_textures)-1:
+                self.cylinder_spin = 0
+
         if self.revolver_in_reload:
             intFrame = int(self.revolver_reload_frame +
                            (self.revolver_reload_frame / 0.75 * 0.25))
@@ -806,10 +810,10 @@ class Game(arcade.Window):
                 self.cylinder_spin = 0
                 if self.is_ADS:
                     self.revolver_in_transition = True
-                    self.revolver_in_reload = False
-                    self.revolver_reload_frame = 0
                     self.revolver_transition_frame = 0
-                
+                else:
+                    self.revolver_in_transition = False
+                    self.revolver_transition_frame = 0
 
         if self.weapon_anim_running and not self.revolver_in_reload:
             # Calculate the spin based on the current frame
@@ -836,6 +840,7 @@ class Game(arcade.Window):
                 # Loop back to the first frame if we reach the end
                 if self.current_frame >= len(self.revolver_textures):
                     self.current_frame = 0
+                    self.cylinder_spin = 0
                     self.weapon_anim_running = False  # Stop the animation after one cycle
 
         for obj in self.objects:
@@ -1108,6 +1113,18 @@ class Game(arcade.Window):
             self.mouse_locked = not self.mouse_locked
             self.set_mouse_visible(not self.mouse_locked)
             self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
+
+        elif key == arcade.key.G:
+            # throw grenade
+            grenade = {
+                "id": 5,
+                "model": Vec3(-self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z),
+                "velocity": Vec3(0, 0, 0),
+                "program": self.sphere_program,
+                "geometry": self.generate_sphere(
+                    0.1, 10, 10, position=self.camera_pos),
+            }
+
         elif key == arcade.key.R:
             # Reload the revolver
             self.revolver_in_reload = True

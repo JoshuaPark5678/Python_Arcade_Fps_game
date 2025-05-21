@@ -387,6 +387,8 @@ class Game(arcade.Window):
         self.revolver_in_reload = False  # Flag to control reload animation
         self.revolver_reload_frame = 0  # Frame index for the reload animation
 
+        start = time.time()
+        
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
             self.revolver_textures.append(arcade.load_texture(texture_path))
@@ -407,6 +409,8 @@ class Game(arcade.Window):
                 arcade.load_texture(texture_path))
 
         print("Revolver textures loaded")
+        print("Textures loaded in", time.time() - start, "seconds")
+        start = time.time()
         enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
                        f"{self.file_dir}/models/crazy_boy_test.bin"]
 
@@ -740,7 +744,7 @@ class Game(arcade.Window):
 
         # set mouse active
         self.set_mouse_visible(not self.mouse_locked)
-        self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
+        self.set_exclusive_mouse(self.mouse_locked)
 
         # Update the revolver animation frame
         if self.is_ADS:
@@ -791,14 +795,21 @@ class Game(arcade.Window):
                     self.cylinder_spin = self.cylinder_spin - 360
 
             else:
-                # spin the cylinder
-                self.cylinder_spin -= 2
-                # Reset the spin if it exceeds 360 degrees
-                if self.cylinder_spin >= 360:
-                    self.cylinder_spin = 0
+                if intFrame > 12:
+                    # spin the cylinder
+                    self.cylinder_spin -= 4
+                    # Reset the spin if it exceeds 360 degrees
+                    if self.cylinder_spin >= 360:
+                        self.cylinder_spin = 0
 
             if intFrame == len(self.revolver_reload_textures)-1:
                 self.cylinder_spin = 0
+                if self.is_ADS:
+                    self.revolver_in_transition = True
+                    self.revolver_in_reload = False
+                    self.revolver_reload_frame = 0
+                    self.revolver_transition_frame = 0
+                
 
         if self.weapon_anim_running and not self.revolver_in_reload:
             # Calculate the spin based on the current frame

@@ -85,7 +85,7 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
                 "geometry": geometry,
                 "base_color_factor": base_color_factor,
             })
-    print(geometries)
+    
     return geometries
 
 

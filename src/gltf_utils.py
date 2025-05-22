@@ -6,6 +6,7 @@ from arcade.gl import BufferDescription
 from pygltflib import GLTF2
 import numpy as np
 import os
+import struct
 
 
 def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
@@ -58,6 +59,18 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
                 idx_length = idx_accessor.count * component_size
                 index_data = bin_data[idx_offset:idx_offset + idx_length]
 
+                # Decode index_data to a Python list
+                if idx_accessor.componentType == 5121:  # UNSIGNED_BYTE
+                    fmt = f'{idx_accessor.count}B'
+                elif idx_accessor.componentType == 5123:  # UNSIGNED_SHORT
+                    fmt = f'{idx_accessor.count}H'
+                elif idx_accessor.componentType == 5125:  # UNSIGNED_INT
+                    fmt = f'{idx_accessor.count}I'
+                else:
+                    raise ValueError("Unsupported index component type")
+
+                indices = list(struct.unpack(fmt, index_data))
+
                 index_buffer = self.ctx.buffer(data=index_data)
 
                 geometry = self.ctx.geometry(
@@ -84,8 +97,15 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
             geometries.append({
                 "geometry": geometry,
                 "base_color_factor": base_color_factor,
+                "indices": indices,  # <--- Add this line
             })
-    
+        else:
+            geometries.append({
+                "geometry": geometry,
+                "base_color_factor": base_color_factor,
+                "indices": None,  # No indices, use flat positions
+            })
+
     return geometries
 
 

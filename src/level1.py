@@ -12,6 +12,9 @@ def get_Enemies(program):
     ]
     return enemies
 def get_walls(program):
+    """Get the wall objects for the level.
+    walls dimensions are 8x8 and have 0 width
+    """
     uv = 2
     walls = [
         {

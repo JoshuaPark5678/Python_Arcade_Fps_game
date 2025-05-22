@@ -14,7 +14,7 @@ import os
 import level1
 import gltf_utils
 import raycast
-
+import enemy
 
 # Constants for screen dimensions
 SCREEN_WIDTH = 1280

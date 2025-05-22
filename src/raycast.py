@@ -6,6 +6,29 @@ from array import array
 from arcade.gl import BufferDescription
 
 
+def ray_intersects_triangle(ray_origin, ray_dir, v0, v1, v2):
+    EPSILON = 1e-6
+    edge1 = v1 - v0
+    edge2 = v2 - v0
+    h = ray_dir.cross(edge2)
+    a = edge1.dot(h)
+    if -EPSILON < a < EPSILON:
+        return False, None  # Ray is parallel to triangle
+    f = 1.0 / a
+    s = ray_origin - v0
+    u = f * s.dot(h)
+    if u < 0.0 or u > 1.0:
+        return False, None
+    q = s.cross(edge1)
+    v = f * ray_dir.dot(q)
+    if v < 0.0 or u + v > 1.0:
+        return False, None
+    t = f * edge2.dot(q)
+    if t > EPSILON:
+        return True, t  # Intersection at distance t
+    else:
+        return False, None
+
 def ray_intersects_aabb(self, ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z):
         t_min = (min_x - ray_start.x) / \
             ray_direction.x if ray_direction.x != 0 else float('-inf')
@@ -80,9 +103,30 @@ def raycast(self, ray_start, ray_direction):
                 closest_distance = distance
         
         if obj["id"] == 10:
+            print("raycast gltf model")
             # gltf model
+            # check to see if the ray went through the geometry of the gltf model
+            # get the geometry of the gltf model
             positions = obj["buffer_data"]
-            
+            indices = obj["geometry"]["indices"] if "geometry" in obj and "indices" in obj["geometry"] else None
+
+            if indices:
+                num_triangles = len(indices) // 3
+                for i in range(num_triangles):
+                    idx0 = indices[i * 3]
+                    idx1 = indices[i * 3 + 1]
+                    idx2 = indices[i * 3 + 2]
+                    v0 = Vec3(*positions[idx0*3:idx0*3+3])
+                    v1 = Vec3(*positions[idx1*3:idx1*3+3])
+                    v2 = Vec3(*positions[idx2*3:idx2*3+3])
+                    hit, distance = ray_intersects_triangle(
+                        ray_start, ray_direction, v0, v1, v2)
+                    if hit and distance < closest_distance:
+                        closest_hit = obj
+                        closest_distance = distance
+            else:
+                print("No indices found for glTF model, skipping raycast.")
             
 
     return closest_hit
+

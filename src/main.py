@@ -132,6 +132,26 @@ class Game(arcade.Window):
             )
         except Exception as e:
             print(f"Error creating shader program: {e}")
+            
+        self.line_program = self.ctx.program(
+            vertex_shader="""
+                #version 330
+                uniform mat4 projection;
+                uniform mat4 model;
+                in vec3 in_pos;
+                void main() {
+                    gl_Position = projection * model * vec4(in_pos, 1.0);
+                }
+            """,
+            fragment_shader="""
+                #version 330
+                uniform vec3 color;
+                out vec4 fragColor;
+                void main() {
+                    fragColor = vec4(color, 1.0);
+                }
+            """
+        )
         # Ground and wall shader program
         self.plane = self.ctx.program(
             vertex_shader="""
@@ -440,6 +460,8 @@ class Game(arcade.Window):
         # set forward and right vectors
         self.forward = Vec3(0, 0, 0)  # Forward vector
         self.right = Vec3(0, 0, 0)  # Right vector
+        
+        self.debug_rays = []  # Each ray is (start: Vec3, end: Vec3)
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
@@ -520,14 +542,29 @@ class Game(arcade.Window):
                     (translation + object_rotation_matrix)
                     @ (rotate_y @ rotate_x @ rotate_z))
 
-                for enemy_geometry in obj["geometry"]:
+                for i, enemy_geometry in enumerate(obj["geometry"]):
+                    if i == 1:
+                        # Set material properties
+                        obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
 
-                    # Set material properties
-                    obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
+                        # Render the geometry
+                        enemy_geometry["geometry"].render(obj["program"])
 
-                    # Render the geometry
-                    enemy_geometry["geometry"].render(obj["program"])
-
+        for ray_start, ray_end in self.debug_rays:
+            # Create a buffer for the line's two endpoints
+            line_buffer = self.ctx.buffer(data=array('f', [
+                ray_start.x, ray_start.y, ray_start.z,
+                ray_end.x, ray_end.y, ray_end.z,
+            ]))
+            line_geometry = self.ctx.geometry(
+                content=[BufferDescription(line_buffer, "3f", ("in_pos",))],
+                mode=self.ctx.LINES,
+            )
+            self.line_program["projection"] = self.proj
+            self.line_program["model"] = translate @ rotate_y @ rotate_x @ rotate_z  # Identity
+            self.line_program["color"] = (1.0, 0.0, 0.0)  # Red
+            line_geometry.render(self.line_program)
+        
         # draw UI
         self.draw_UI()
 
@@ -787,13 +824,11 @@ class Game(arcade.Window):
                     self.chamber.append(0)
 
             if intFrame > 39 and intFrame < 45:
-                # print(intFrame - 38)
                 self.chamber[intFrame - 40] = 1
             # spin the cylinder during reload
 
             if intFrame > 41:
                 self.cylinder_spin += 12
-                print(self.cylinder_spin)
                 # Reset the spin if it exceeds 360 degrees
                 if self.cylinder_spin >= 360:
                     self.cylinder_spin = self.cylinder_spin - 360
@@ -1151,11 +1186,26 @@ class Game(arcade.Window):
                                                                self.enemy1_gltf, self.enemy1_bin_data)
 
         elif key == arcade.key.Q:
-            # print nodes
-            for obj in self.objects:
-                if obj["id"] == 10:
-                    print(obj["geometry"])
-
+            # shoot 180 rays in a circle
+            for i in range(180):
+                angle = i * (360 / 180)
+                ray_start = Vec3(
+                    -self.camera_pos.x,
+                    -self.camera_pos.y,
+                    -self.camera_pos.z
+                )
+                # no y component
+                ray_direction = Vec3(
+                    math.sin(math.radians(angle)),
+                    0,
+                    -math.cos(math.radians(angle)),
+                )
+                raycast_result = raycast.raycast(
+                    self, ray_start, ray_direction)
+                self.debug_rays.append((ray_start, ray_start + ray_direction.normalize().scale(100)))
+                if raycast_result:
+                    print("Hit object:", raycast_result)
+                    
         elif key == arcade.key.UP:
             for obj in self.objects:
                 if obj["id"] == 2:
@@ -1218,6 +1268,8 @@ class Game(arcade.Window):
                     )
                     raycast_result = raycast.raycast(
                         self, ray_start, ray_direction)
+                    self.debug_rays.append(
+                        (ray_start, ray_start + ray_direction.normalize().scale(100)))
                     if raycast_result:
                         print("Hit object:", raycast_result)
 

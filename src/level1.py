@@ -424,7 +424,8 @@ def get_walls(program):
             ],
         },
     ]
-    return walls
+    # return walls
+    return []
 
 def get_doors(program):
     doors = [

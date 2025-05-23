@@ -107,26 +107,29 @@ def raycast(self, ray_start, ray_direction):
             # gltf model
             # check to see if the ray went through the geometry of the gltf model
             # get the geometry of the gltf model
+            body = obj["geometry"][5]
             positions = obj["buffer_data"]
-            indices = obj["geometry"]["indices"] if "geometry" in obj and "indices" in obj["geometry"] else None
-
+            indices = body["indices"] if "indices" in body else None
             if indices:
+                print("I HAVE INDICES")
                 num_triangles = len(indices) // 3
                 for i in range(num_triangles):
+                    # Get the vertices of the triangle
                     idx0 = indices[i * 3]
                     idx1 = indices[i * 3 + 1]
                     idx2 = indices[i * 3 + 2]
+                    # Get the positions of the vertices
                     v0 = Vec3(*positions[idx0*3:idx0*3+3])
                     v1 = Vec3(*positions[idx1*3:idx1*3+3])
                     v2 = Vec3(*positions[idx2*3:idx2*3+3])
+                    # Check for intersection with the triangle
                     hit, distance = ray_intersects_triangle(
                         ray_start, ray_direction, v0, v1, v2)
+                    # If the ray intersects the triangle, check if it's the closest hit
                     if hit and distance < closest_distance:
                         closest_hit = obj
                         closest_distance = distance
-            else:
-                print("No indices found for glTF model, skipping raycast.")
-            
 
     return closest_hit
+    #return closest_hit
 

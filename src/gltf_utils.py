@@ -18,7 +18,7 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
     geometries = []  # List to store all geometries
 
     # Iterate through all meshes in the GLTF file
-    for mesh in gltf.meshes:
+    for i, mesh in enumerate(gltf.meshes):
         for primitive in mesh.primitives:
             # === POSITION ===
             pos_accessor = gltf.accessors[primitive.attributes.POSITION]
@@ -47,8 +47,7 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
             if primitive.indices is not None:
                 idx_accessor = gltf.accessors[primitive.indices]
                 idx_view = gltf.bufferViews[idx_accessor.bufferView]
-                idx_offset = (idx_view.byteOffset or 0) + \
-                    (idx_accessor.byteOffset or 0)
+                idx_offset = (idx_view.byteOffset or 0) + (idx_accessor.byteOffset or 0)
 
                 component_size = {
                     5121: 1,  # UNSIGNED_BYTE
@@ -70,23 +69,21 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
                     raise ValueError("Unsupported index component type")
 
                 indices = list(struct.unpack(fmt, index_data))
-
-                index_buffer = self.ctx.buffer(data=index_data)
-
-                geometry = self.ctx.geometry(
-                    content=[BufferDescription(
-                        vertex_buffer, "3f", ["in_pos"])],
-                    index_buffer=index_buffer,
-                    index_element_size=component_size,
-                    mode=self.ctx.TRIANGLES
-                )
             else:
-                geometry = self.ctx.geometry(
-                    content=[BufferDescription(
-                        vertex_buffer, "3f", ["in_pos"])],
-                    mode=self.ctx.TRIANGLES
-                )
+                # No indices: generate default
+                vertex_count = pos_accessor.count
+                indices = list(range(vertex_count))
 
+            index_buffer = self.ctx.buffer(data=index_data)
+            
+            geometry = self.ctx.geometry(
+                content=[BufferDescription(
+                    vertex_buffer, "3f", ["in_pos"])],
+                index_buffer=index_buffer,
+                index_element_size=component_size,
+                mode=self.ctx.TRIANGLES
+            )
+            
             # === MATERIAL ===
             material = gltf.materials[primitive.material]
             base_color_factor = material.pbrMetallicRoughness.baseColorFactor or [
@@ -98,12 +95,6 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
                 "geometry": geometry,
                 "base_color_factor": base_color_factor,
                 "indices": indices,  # <--- Add this line
-            })
-        else:
-            geometries.append({
-                "geometry": geometry,
-                "base_color_factor": base_color_factor,
-                "indices": None,  # No indices, use flat positions
             })
 
     return geometries

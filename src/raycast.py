@@ -107,7 +107,7 @@ def raycast(self, ray_start, ray_direction):
             # gltf model
             # check to see if the ray went through the geometry of the gltf model
             # get the geometry of the gltf model
-            body = obj["geometry"][5]
+            body = obj["geometry"][2]
             positions = obj["buffer_data"]
             indices = body["indices"] if "indices" in body else None
             if indices:
@@ -131,5 +131,4 @@ def raycast(self, ray_start, ray_direction):
                         closest_distance = distance
 
     return closest_hit
-    #return closest_hit
 

@@ -94,6 +94,8 @@ def load_gltf(self, gltf, bin_data, scale=Vec3(0.2, 0.2, 0.2)):
             geometries.append({
                 "geometry": geometry,
                 "base_color_factor": base_color_factor,
+                # Store positions for raycasting
+                "positions": list(combined_data),
                 "indices": indices,  # <--- Add this line
             })
 

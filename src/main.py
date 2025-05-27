@@ -547,12 +547,12 @@ class Game(arcade.Window):
                     @ (rotate_y @ rotate_x @ rotate_z))
 
                 for i, enemy_geometry in enumerate(obj["geometry"]):
-                    if i == 2:
-                        # Set material properties
-                        obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
+                    
+                    # Set material properties
+                    obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
 
-                        # Render the geometry
-                        enemy_geometry["geometry"].render(obj["program"])
+                    # Render the geometry
+                    enemy_geometry["geometry"].render(obj["program"])
 
         for ray_start, ray_end, color in self.debug_rays:
             # Create a buffer for the line's two endpoints
@@ -1209,7 +1209,7 @@ class Game(arcade.Window):
                      (random.random(), random.random(), random.random())  # Random color
                     ))
                 if raycast_result:
-                    print("Hit object:", raycast_result)
+                    print("Hit object:", raycast_result["name"])
 
         elif key == arcade.key.UP:
             for obj in self.objects:
@@ -1260,6 +1260,8 @@ class Game(arcade.Window):
                     # # Add the projectile to the list of objects
                     # self.objects.append(projectile)
 
+                    self.debug_rays = []  # Clear debug rays
+                    
                     # raycast amd get the object hit
                     ray_start = Vec3(
                         -self.camera_pos.x,
@@ -1279,7 +1281,7 @@ class Game(arcade.Window):
                           random.random())  # Random color
                     ))
                     if raycast_result:
-                        print("Hit object:", raycast_result)
+                        print("Hit object:", raycast_result["name"])
 
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed

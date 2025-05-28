@@ -10,6 +10,7 @@ from pygltflib import GLTF2
 import time
 import os
 import random
+import threading
 
 # Import the necessary files
 import level1
@@ -263,6 +264,42 @@ class Game(arcade.Window):
         self.texture1.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture2.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture3.filter = self.ctx.NEAREST, self.ctx.NEAREST
+        
+    def setup_revolver_textures(self):
+        start = time.time()
+        self.currentLoading = 0
+        self.totalLoading = len(os.listdir(f"{self.file_dir}/model_ui/revolver/shoot/")) + \
+            len(os.listdir(f"{self.file_dir}/model_ui/revolver/ADS_shoot/")) + \
+            len(os.listdir(f"{self.file_dir}/model_ui/revolver/ADS_transition/")) + \
+            len(os.listdir(f"{self.file_dir}/model_ui/revolver/Reload/"))
+
+        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
+            texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
+            self.revolver_textures.append(arcade.load_texture(texture_path))
+            self.currentLoading += 1
+
+        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
+            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
+            self.revolver_ADS_textures.append(
+                arcade.load_texture(texture_path))
+            self.currentLoading += 1
+
+        for i in range(1, 9):  # Assuming the images are named 0001.png to 0008.png
+            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_transition/{i:04d}.png"
+            self.revolver_ADS_transition_textures.append(
+                arcade.load_texture(texture_path))
+            self.currentLoading += 1
+
+        for i in range(1, 73):
+            texture_path = f"{self.file_dir}/model_ui/revolver/Reload/{i:04d}.png"
+            self.revolver_reload_textures.append(
+                arcade.load_texture(texture_path))
+            self.currentLoading += 1
+
+        print("Revolver textures loaded")
+        print("Textures loaded in", time.time() - start, "seconds")
+        self.isLoaded = True  # Set flag when done
+        
 
     def setup(self):
         # Set the background color
@@ -411,29 +448,11 @@ class Game(arcade.Window):
         self.revolver_in_reload = False  # Flag to control reload animation
         self.revolver_reload_frame = 0  # Frame index for the reload animation
 
-        start = time.time()
-
-        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
-            texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
-            self.revolver_textures.append(arcade.load_texture(texture_path))
-
-        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
-            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
-            self.revolver_ADS_textures.append(
-                arcade.load_texture(texture_path))
-
-        for i in range(1, 9):  # Assuming the images are named 0001.png to 0008.png
-            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_transition/{i:04d}.png"
-            self.revolver_ADS_transition_textures.append(
-                arcade.load_texture(texture_path))
-
-        for i in range(1, 73):
-            texture_path = f"{self.file_dir}/model_ui/revolver/Reload/{i:04d}.png"
-            self.revolver_reload_textures.append(
-                arcade.load_texture(texture_path))
-
-        print("Revolver textures loaded")
-        print("Textures loaded in", time.time() - start, "seconds")
+        self.isLoaded = False  # Flag to check if the textures are loaded
+        threading.Thread(target=self.setup_revolver_textures,
+                         daemon=True).start()
+        
+        
         start = time.time()
         enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
                        f"{self.file_dir}/models/crazy_boy_test.bin"]
@@ -470,6 +489,21 @@ class Game(arcade.Window):
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
             self.setup_textures()
+            
+        if not self.isLoaded:
+            # draw loading screen
+            arcade.draw_xywh_rectangle_filled(
+                0, 0, self.screen_width, self.screen_height, arcade.color.BLACK)
+            # Draw loading bar
+            loading_bar_width = (self.currentLoading / self.totalLoading)
+            print(f"Loading textures... {self.currentLoading}/{self.totalLoading} ({loading_bar_width * 100:.2f}%)")
+            #draw outline
+            arcade.draw_xywh_rectangle_outline(
+                self.screen_width // 2 - 100, self.screen_height // 2 - 10, 200, 20, arcade.color.WHITE, 2)
+            arcade.draw_xywh_rectangle_filled(
+                self.screen_width // 2 - 100, self.screen_height // 2 - 10, 200 * loading_bar_width, 20, arcade.color.WHITE)
+            return  # Exit the draw method if textures are not loaded
+
         self.clear()
         self.ctx.enable(self.ctx.DEPTH_TEST)  # Ensure depth testing is enabled
 
@@ -779,11 +813,16 @@ class Game(arcade.Window):
             print(f"Error drawing texture: {e}")
 
     def on_update(self, delta_time: float):
-        # Update object list
-        self.objects.sort(key=self.get_distance, reverse=True)
-
+        
         # Update the time
         self.time += delta_time
+        
+        if not self.isLoaded:
+            # If textures are not loaded, skip the update
+            return
+        
+        # Update object list
+        self.objects.sort(key=self.get_distance, reverse=True)
 
         # set mouse active
         self.set_mouse_visible(not self.mouse_locked)
@@ -1127,6 +1166,10 @@ class Game(arcade.Window):
             self.camera_rot.x = math.pi / 2
 
     def on_key_press(self, key, modifiers):
+        if not self.isLoaded:
+            # If textures are not loaded, skip key presses
+            return
+        # Handle key presses for movement and actions
         if key == arcade.key.W:
             self.movement["forward"] = True
         elif key == arcade.key.S:
@@ -1229,6 +1272,9 @@ class Game(arcade.Window):
             self.camera_rot.x -= dy * self.mouse_sensitivity  # Invert pitch adjustment
 
     def on_mouse_press(self, x, y, button, modifiers):
+        if not self.isLoaded:
+            # If textures are not loaded, skip key presses
+            return
         if button == arcade.MOUSE_BUTTON_LEFT:
             # check if there are ammo
             if len([bullet for bullet in self.chamber if bullet > 0]) > 0:
@@ -1282,6 +1328,8 @@ class Game(arcade.Window):
                     ))
                     if raycast_result:
                         print("Hit object:", raycast_result["name"])
+            else:
+                self.revolver_in_reload = True
 
         if button == arcade.MOUSE_BUTTON_RIGHT:
             # Check if the right mouse button is pressed

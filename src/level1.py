@@ -1,17 +1,9 @@
 import arcade
 from pyglet.math import Mat4, Vec3
-def get_Enemies(program):
-    enemies = [
-        {
-            "name": "enemy1_001",
-            "program": program,
-            "id": 10,
-            "buffer_data": Vec3(0, -2, -20),
-            "rotation": Vec3(0, 0, 0),
-        }
-    ]
-    return enemies
-def get_walls(program):
+
+import enemy
+
+def get_walls(program = None):
     """Get the wall objects for the level.
     walls dimensions are 8x8 and have 0 width
     """
@@ -19,9 +11,6 @@ def get_walls(program):
     walls = [
         {
             "name": "wall_001",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -4, -2, 8,       0, uv,  # Bottom Left
@@ -32,9 +21,6 @@ def get_walls(program):
         },
         {
             "name": "wall_002",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -4, -2, -4,       0, uv,  # Bottom Left
@@ -45,9 +31,6 @@ def get_walls(program):
         },
         {
             "name": "wall_003",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 4, -2, -4,       0, uv,  # Bottom Left
@@ -58,9 +41,6 @@ def get_walls(program):
         },
         {
             "name": "wall_004",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -4, -2, -4,       0, uv,  # Bottom Left
@@ -71,9 +51,6 @@ def get_walls(program):
         },
         {
             "name": "wall_005",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 4, -2, -4,       0, uv,  # Bottom Left
@@ -84,9 +61,6 @@ def get_walls(program):
         },
         {
             "name": "wall_006",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -16, -2, -4,       0, uv,  # Bottom Left
@@ -97,9 +71,6 @@ def get_walls(program):
         },
         {
             "name": "wall_007",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -16, -2, -16,      0, uv,  # Bottom Left
@@ -110,9 +81,6 @@ def get_walls(program):
         },
         {
             "name": "wall_008",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 16, -2, -4,        0, uv,  # Bottom Left
@@ -123,9 +91,6 @@ def get_walls(program):
         },
         {
             "name": "wall_009",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 16, -2, -16,       0, uv,  # Bottom Left
@@ -136,9 +101,6 @@ def get_walls(program):
         },
         {
             "name": "wall_010",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -4, -2, -28,       0, uv,  # Bottom Left
@@ -149,9 +111,6 @@ def get_walls(program):
         },
         {
             "name": "wall_011",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 4, -2, -28,       0, uv,  # Bottom Left
@@ -162,9 +121,6 @@ def get_walls(program):
         },
         {
             "name": "wall_012",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -4, -2, -28,       0, uv,  # Bottom Left
@@ -175,9 +131,6 @@ def get_walls(program):
         },
         {
             "name": "wall_013",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 4, -2, -28,       0, uv,  # Bottom Left
@@ -188,9 +141,6 @@ def get_walls(program):
         },
         {
             "name": "wall_014",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -4, -2, -40,       0, uv,  # Bottom Left
@@ -201,11 +151,8 @@ def get_walls(program):
         },
         {
             "name": "wall_015",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
-                 # Position         UV
+                # Position         UV
                 4, -2, -40,       0, uv,  # Bottom Left
                 4, 6, -40,        0, 0,   # Top Left
                 16, -2, -40,      uv, uv,  # Bottom Right
@@ -214,9 +161,6 @@ def get_walls(program):
         },
         {
             "name": "wall_016",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 -4, -2, -52,       0, uv,  # Bottom Left
@@ -227,9 +171,6 @@ def get_walls(program):
         },
         {
             "name": "wall_017",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 4, -2, -52,       0, uv,  # Bottom Left
@@ -240,9 +181,6 @@ def get_walls(program):
         },
         {
             "name": "wall_018",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # slightly shorter wall
                 # Position         UV
@@ -254,9 +192,6 @@ def get_walls(program):
         },
         {
             "name": "wall_019",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # slightly shorter wall
                 # Position         UV
@@ -268,9 +203,6 @@ def get_walls(program):
         },
         {
             "name": "wall_020",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # slightly shorter wall
                 # Position         UV
@@ -282,9 +214,6 @@ def get_walls(program):
         },
         {
             "name": "wall_021",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 16, -2, -52,       0, uv,  # Bottom Left
@@ -295,9 +224,6 @@ def get_walls(program):
         },
         {
             "name": "wall_022",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 28, -2, -40,       0, uv,  # Bottom Left
@@ -308,9 +234,6 @@ def get_walls(program):
         },
         {
             "name": "wall_023",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 16, -2, -40,       0, uv,  # Bottom Left
@@ -321,9 +244,6 @@ def get_walls(program):
         },
         {
             "name": "wall_024",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 28, -2, -40,       0, uv,  # Bottom Left
@@ -334,9 +254,6 @@ def get_walls(program):
         },
         {
             "name": "wall_025",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 40, -2, -40,       0, uv,  # Bottom Left
@@ -347,9 +264,6 @@ def get_walls(program):
         },
         {
             "name": "wall_026",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 40, -2, -28,       0, uv,  # Bottom Left
@@ -360,9 +274,6 @@ def get_walls(program):
         },
         {
             "name": "wall_027",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 40, -2, -16,       0, uv,  # Bottom Left
@@ -373,9 +284,6 @@ def get_walls(program):
         },
         {
             "name": "wall_028",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 28, -2, -4,       0, uv,  # Bottom Left
@@ -386,9 +294,6 @@ def get_walls(program):
         },
         {
             "name": "wall_029",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 28, -2, -4,       0, uv,  # Bottom Left
@@ -399,9 +304,6 @@ def get_walls(program):
         },
         {
             "name": "wall_030",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 28, -2, 8,        0, uv,  # Bottom Left
@@ -412,9 +314,6 @@ def get_walls(program):
         },
         {
             "name": "wall_031",
-            "program": program,  # Use the passed program
-            "texture": 1,
-            "opacity": 1.0,
             "buffer_data": [
                 # Position         UV
                 16, -2, 8,        0, uv,  # Bottom Left
@@ -444,3 +343,17 @@ def get_doors(program):
         }
     ]
     return doors
+
+
+def get_Enemies(program):
+    enemies = [
+        {
+            "name": "enemy1_001",
+            "object": enemy.Enemy(Vec3(0, -2, -20), 100, Vec3(0, 0, 0), get_walls(), []),
+            "program": program,
+            "id": 10,
+            "buffer_data": Vec3(0, -2, -20),
+            "rotation": Vec3(0, 0, 0),
+        }
+    ]
+    return enemies

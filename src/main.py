@@ -144,19 +144,24 @@ class Game(arcade.Window):
                 uniform mat4 projection;
                 uniform mat4 model;
                 in vec3 in_pos;
+                out float v_dist;
                 void main() {
                     gl_Position = projection * model * vec4(in_pos, 1.0);
+                    v_dist = gl_Position.z; // Pass depth for gradient
                 }
             """,
             fragment_shader="""
                 #version 330
                 uniform vec3 color;
+                in float v_dist;
                 out vec4 fragColor;
                 void main() {
-                    fragColor = vec4(color, 1.0);
+                    float alpha = 1.0 - smoothstep(0.99, 1.0, abs(v_dist)); // Fades at far Z
+                    fragColor = vec4(color, alpha);
                 }
             """
         )
+    
         # Ground and wall shader program
         self.plane = self.ctx.program(
             vertex_shader="""
@@ -378,6 +383,9 @@ class Game(arcade.Window):
             self.objects.append(wall)
             wall_buffer = self.ctx.buffer(data=array('f', wall["buffer_data"]))
             wall["id"] = 1
+            wall["texture"] = 1  # Set texture ID for walls
+            wall["program"] = self.plane  # Use the same shader program for walls
+            wall["opacity"] = 1.0  # Set default opacity for walls
             wall["geometry"] = self.ctx.geometry(
                 content=[BufferDescription(
                     wall_buffer, "3f 2f", ("in_pos", "in_uv"))],
@@ -569,10 +577,10 @@ class Game(arcade.Window):
 
                 # Rotate the object around the Y-axis
                 object_rotation_matrix = (Mat4.from_rotation(
-                    obj["rotation"].y, (0, 1, 0)) - Mat4.from_translation(Vec3(0, 0, 0)))  # Rotate around Y-axis
+                    obj["object"].get_rotation().y, (0, 1, 0)) - Mat4.from_translation(Vec3(0, 0, 0)))  # Rotate around Y-axis
 
                 translation = (Mat4.from_translation(
-                    self.camera_pos) @ Mat4.from_translation(obj["buffer_data"]))
+                    self.camera_pos) @ Mat4.from_translation(obj["object"].get_world_position()))  # Get the world position of the object
 
                 # Final model matrix
                 obj["program"]["model"] = (
@@ -828,6 +836,10 @@ class Game(arcade.Window):
         self.set_mouse_visible(not self.mouse_locked)
         self.set_exclusive_mouse(self.mouse_locked)
 
+        for obj in self.objects:
+            if obj["id"] == 10:
+                obj["object"].move(self.camera_pos)
+
         # Update the revolver animation frame
         if self.is_ADS:
             # Zoom in
@@ -934,11 +946,11 @@ class Game(arcade.Window):
             elif obj["id"] == 10:  # Assuming this is the enemy object
 
                 # Calculate the direction vector from the enemy to the player
-                enemy_position = obj["buffer_data"]
+                enemy_position = obj["object"].get_world_position()
                 direction = Vec3(
-                    -self.camera_pos.x - enemy_position[0],
+                    -self.camera_pos.x - enemy_position.x,
                     0,  # Ignore the Y-axis for horizontal rotation
-                    -self.camera_pos.z - enemy_position[2]
+                    -self.camera_pos.z - enemy_position.z
                 )
 
                 # Normalize the direction vector
@@ -948,7 +960,7 @@ class Game(arcade.Window):
                 yaw = math.atan2(direction.x, direction.z)
 
                 # Update the enemy's rotation
-                obj["rotation"].y = yaw  # Convert to degrees
+                obj["object"].rotation.y = yaw  # Convert to degrees
 
         rotation_y = self.camera_rot.y
 
@@ -1227,7 +1239,14 @@ class Game(arcade.Window):
                                                                self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
 
         elif key == arcade.key.E:
-            self.debugVal += 1
+            # move the enemy object forward
+            for obj in self.objects:
+                if obj["id"] == 10:
+                    # Move the enemy object forward according to its rotation
+                    rotation = obj["object"].get_rotation()
+                    forward = Vec3(
+                        math.sin(rotation.y), 0, math.cos(rotation.y))
+                    obj["object"].move(forward.scale(0.1))  # Move forward by 0.1 units
 
         elif key == arcade.key.Q:
             self.debug_rays = []  # Clear debug rays
@@ -1465,11 +1484,11 @@ class Game(arcade.Window):
             )
         elif object["id"] == 10:
             # enemy1 has only one vertex (x, y, z)
-            enemy1_position = object["buffer_data"]
+            enemy1_position = object["object"].get_world_position()
             distance = math.sqrt(
-                (self.camera_pos.x + enemy1_position[0]) ** 2 +
-                (self.camera_pos.y + enemy1_position[1]) ** 2 +
-                (self.camera_pos.z + enemy1_position[2]) ** 2
+                (self.camera_pos.x + enemy1_position.x) ** 2 +
+                (self.camera_pos.y + enemy1_position.y) ** 2 +
+                (self.camera_pos.z + enemy1_position.z) ** 2
             )
 
         return distance

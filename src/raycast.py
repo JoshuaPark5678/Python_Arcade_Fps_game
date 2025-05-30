@@ -77,8 +77,7 @@ def ray_intersects_aabb(self, ray_start, ray_direction, min_x, max_x, min_y, max
     return True, t_min if t_min > 0 else t_max
 
 
-def raycast(self, ray_start, ray_direction):
-    ray_length = 1000  # Maximum ray length
+def raycast(self, ray_start, ray_direction, ray_length=100):
     ray_end = (ray_start + ray_direction).normalize().scale(ray_length)
 
     closest_hit = None
@@ -114,7 +113,7 @@ def raycast(self, ray_start, ray_direction):
             if indices:
                 num_triangles = len(indices) // 3
                 # If this is the model's world position (Vec3)
-                model_origin = obj["buffer_data"]
+                model_origin = obj["object"].get_world_position()
                 for i in range(num_triangles):
                     # Get the vertices of the triangle
                     idx0 = indices[i * 3]

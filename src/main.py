@@ -53,7 +53,7 @@ class Game(arcade.Window):
         self.texture1 = None
         self.texture2 = None
         self.texture3 = None
-        
+
         try:
             # Shader program for the object
             self.GLTF_program = self.ctx.program(
@@ -102,15 +102,13 @@ class Game(arcade.Window):
             fragment_shader="""
                 #version 330
                 uniform vec3 color;
-                in float v_dist;
                 out vec4 fragColor;
                 void main() {
-                    float alpha = 1.0 - smoothstep(0.99, 1.0, abs(v_dist)); // Fades at far Z
-                    fragColor = vec4(color, alpha);
+                    fragColor = vec4(color, 1.0);  // Set the color of the line
                 }
             """
         )
-    
+
         # Ground and wall shader program
         self.plane = self.ctx.program(
             vertex_shader="""
@@ -218,7 +216,7 @@ class Game(arcade.Window):
         self.texture1.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture2.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture3.filter = self.ctx.NEAREST, self.ctx.NEAREST
-        
+
     def setup_revolver_textures(self):
         start = time.time()
         self.currentLoading = 0
@@ -226,6 +224,19 @@ class Game(arcade.Window):
             len(os.listdir(f"{self.file_dir}/model_ui/revolver/ADS_shoot/")) + \
             len(os.listdir(f"{self.file_dir}/model_ui/revolver/ADS_transition/")) + \
             len(os.listdir(f"{self.file_dir}/model_ui/revolver/Reload/"))
+
+        # if debug mode is enabled, load only one frame of each animation
+        if self.debugMode:
+            self.revolver_textures = [arcade.load_texture(
+                f"{self.file_dir}/model_ui/revolver/shoot/0001.png")]
+            self.revolver_ADS_textures = [arcade.load_texture(
+                f"{self.file_dir}/model_ui/revolver/ADS_shoot/0001.png")]
+            self.revolver_ADS_transition_textures = [arcade.load_texture(
+                f"{self.file_dir}/model_ui/revolver/ADS_transition/0001.png")]
+            self.revolver_reload_textures = [arcade.load_texture(
+                f"{self.file_dir}/model_ui/revolver/Reload/0001.png")]
+            self.isLoaded = True  # Set flag when done
+            return
 
         for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
             texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
@@ -253,13 +264,15 @@ class Game(arcade.Window):
         print("Revolver textures loaded")
         print("Textures loaded in", time.time() - start, "seconds")
         self.isLoaded = True  # Set flag when done
-        
 
     def setup(self):
         # Set the background color
         arcade.set_background_color(arcade.color.DARK_BLUE_GRAY)
 
         self.fov = 90  # Field of view
+
+        self.is_paused = False  # Flag to track if the game is paused
+
         # set up the ground
         self.proj = Mat4.perspective_projection(
             self.aspect_ratio, 0.01, 500, fov=self.fov,  # Set the field of view
@@ -333,7 +346,8 @@ class Game(arcade.Window):
             wall_buffer = self.ctx.buffer(data=array('f', wall["buffer_data"]))
             wall["id"] = 1
             wall["texture"] = 1  # Set texture ID for walls
-            wall["program"] = self.plane  # Use the same shader program for walls
+            # Use the same shader program for walls
+            wall["program"] = self.plane
             wall["opacity"] = 1.0  # Set default opacity for walls
             wall["geometry"] = self.ctx.geometry(
                 content=[BufferDescription(
@@ -406,10 +420,10 @@ class Game(arcade.Window):
         self.revolver_reload_frame = 0  # Frame index for the reload animation
 
         self.isLoaded = False  # Flag to check if the textures are loaded
+        self.debugMode = True  # Debug mode flag
         threading.Thread(target=self.setup_revolver_textures,
                          daemon=True).start()
-        
-        
+
         start = time.time()
         enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
                        f"{self.file_dir}/models/crazy_boy_test.bin"]
@@ -441,20 +455,22 @@ class Game(arcade.Window):
         self.forward = Vec3(0, 0, 0)  # Forward vector
         self.right = Vec3(0, 0, 0)  # Right vector
 
-        self.debug_rays = []  # Each ray is (start: Vec3, end: Vec3, color: tuple)
+        # Each ray is (start: Vec3, end: Vec3, color: tuple)
+        self.debug_rays = []
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
             self.setup_textures()
-            
+
         if not self.isLoaded:
             # draw loading screen
             arcade.draw_xywh_rectangle_filled(
                 0, 0, self.screen_width, self.screen_height, arcade.color.BLACK)
             # Draw loading bar
             loading_bar_width = (self.currentLoading / self.totalLoading)
-            arcade.draw_text(f"Loading textures... {self.currentLoading}/{self.totalLoading} ({loading_bar_width * 100:.2f}%)", self.screen_width // 2, self.screen_height // 3, arcade.color.WHITE, 12, anchor_x="center", anchor_y="center")
-            #draw outline
+            arcade.draw_text(f"Loading textures... {self.currentLoading}/{self.totalLoading} ({loading_bar_width * 100:.2f}%)",
+                             self.screen_width // 2, self.screen_height // 3, arcade.color.WHITE, 12, anchor_x="center", anchor_y="center")
+            # draw outline
             arcade.draw_xywh_rectangle_outline(
                 self.screen_width // 2 - 100, self.screen_height // 2 - 10, 200, 20, arcade.color.WHITE, 2)
             arcade.draw_xywh_rectangle_filled(
@@ -538,28 +554,31 @@ class Game(arcade.Window):
                     @ (rotate_y @ rotate_x @ rotate_z))
 
                 for i, enemy_geometry in enumerate(obj["geometry"]):
-                    
+
                     # Set material properties
                     obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
 
                     # Render the geometry
                     enemy_geometry["geometry"].render(obj["program"])
 
-        for ray_start, ray_end, color in self.debug_rays:
-            # Create a buffer for the line's two endpoints
-            line_buffer = self.ctx.buffer(data=array('f', [
-                ray_start.x, ray_start.y, ray_start.z,
-                ray_end.x, ray_end.y, ray_end.z,
-            ]))
-            line_geometry = self.ctx.geometry(
-                content=[BufferDescription(line_buffer, "3f", ("in_pos",))],
-                mode=self.ctx.LINES,
-            )
+        for ray_start, ray_end, color, timestamp in self.debug_rays:
+            # Horizontal quad (as before)
+            line_geometry_h = self.create_thick_line_geometry(
+                self.ctx, ray_start, ray_end, thickness=0.1, orientation="horizontal")
             self.line_program["projection"] = self.proj
-            # Identity
             self.line_program["model"] = translate @ rotate_y @ rotate_x @ rotate_z
-            self.line_program["color"] = color  # Set the color for the line
-            line_geometry.render(self.line_program)
+            self.line_program["color"] = color
+            line_geometry_h.render(self.line_program)
+
+            # Vertical quad (new)
+            line_geometry_v = self.create_thick_line_geometry(
+                self.ctx, ray_start, ray_end, thickness=0.1, orientation="vertical")
+            self.line_program["color"] = color
+            line_geometry_v.render(self.line_program)
+
+            # remove the exprired rays
+            if self.time - timestamp > 0.5:  # Remove rays older than 0.5 seconds
+                self.debug_rays.remove((ray_start, ray_end, color, timestamp))
 
         # draw UI
         self.draw_UI()
@@ -787,17 +806,17 @@ class Game(arcade.Window):
             print(f"Error drawing texture: {e}")
 
     def on_update(self, delta_time: float):
-        
+
         # Update the time
         self.time += delta_time
-        
+
         if not self.isLoaded:
             # If textures are not loaded, skip the update
             return
-        
+
         if self.is_paused:
             return  # Skip updating the game when paused
-        
+
         # Update object list
         self.objects.sort(key=self.get_distance, reverse=True)
 
@@ -808,6 +827,8 @@ class Game(arcade.Window):
         for obj in self.objects:
             if obj["id"] == 10:
                 obj["object"].move(-self.camera_pos)
+                if obj["object"].is_dead():
+                    self.objects.remove(obj)
 
         # Update the revolver animation frame
         if self.is_ADS:
@@ -1201,7 +1222,11 @@ class Game(arcade.Window):
 
         elif key == arcade.key.R:
             # Reload the revolver
+            print("Reloading!")
             self.revolver_in_reload = True
+            if self.debugMode:
+                # Fill the chamber with bullets for debugging
+                self.chamber = [1] * self.max_ammo
 
             # self.chamber = [1] * self.max_ammo  # Fill the chamber with bullets
 
@@ -1209,13 +1234,9 @@ class Game(arcade.Window):
             #     self.chamber.append(1)  # Add a bullet to the chamber
 
         elif key == arcade.key.F:
-            # print animation
-            for obj in self.objects:
-                if obj["id"] == 10:
-                    for i, node in enumerate(self.enemy1_gltf.nodes):
-                        node.translation = [0, 0, 0]
-                        obj["geometry"] = gltf_utils.load_gltf(self,
-                                                               self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
+            for rays in self.debug_rays:
+                print("Ray Start:", rays[0], "Ray End:",
+                      rays[1], "Color:", rays[2])
 
         elif key == arcade.key.E:
             # move the enemy object forward
@@ -1225,31 +1246,11 @@ class Game(arcade.Window):
                     rotation = obj["object"].get_rotation()
                     forward = Vec3(
                         math.sin(rotation.y), 0, math.cos(rotation.y))
-                    obj["object"].move(forward.scale(0.1))  # Move forward by 0.1 units
+                    # Move forward by 0.1 units
+                    obj["object"].move(forward.scale(0.1))
 
         elif key == arcade.key.Q:
-            self.debug_rays = []  # Clear debug rays
-            # shoot 180 rays in a circle
-            for i in range(180):
-                angle = i * (360 / 180)
-                ray_start = Vec3(
-                    -self.camera_pos.x,
-                    -self.camera_pos.y,
-                    -self.camera_pos.z
-                )
-                # no y component
-                ray_direction = Vec3(
-                    math.sin(math.radians(angle)),
-                    0,
-                    -math.cos(math.radians(angle)),
-                )
-                raycast_result = raycast.raycast(ray_start, ray_direction, self.objects)
-                self.debug_rays.append(
-                    (ray_start, ray_start + ray_direction.normalize().scale(100),
-                     (random.random(), random.random(), random.random())  # Random color
-                    ))
-                if raycast_result:
-                    print("Hit object:", raycast_result["name"])
+            pass
 
         elif key == arcade.key.UP:
             for obj in self.objects:
@@ -1276,7 +1277,7 @@ class Game(arcade.Window):
             # check if there are ammo
             if len([bullet for bullet in self.chamber if bullet > 0]) > 0:
                 if not self.weapon_anim_running:  # Start the animation only if it's not already running
-
+                    print("Shooting!")
                     # Decrease ammo count
                     self.chamber.pop(0)
 
@@ -1304,26 +1305,35 @@ class Game(arcade.Window):
                     # self.objects.append(projectile)
 
                     self.debug_rays = []  # Clear debug rays
-                    
+
                     # raycast amd get the object hit
                     ray_start = Vec3(
                         -self.camera_pos.x,
                         -self.camera_pos.y,
                         -self.camera_pos.z
                     )
+
                     ray_direction = Vec3(
                         math.sin(self.camera_rot.y),
                         -math.sin(self.camera_rot.x),
                         -math.cos(self.camera_rot.y),
                     )
-                    raycast_result = raycast.raycast(ray_start, ray_direction, self.objects)
+                    
+                    raycast_result = raycast.raycast(
+                        ray_start, ray_direction, self.objects)
                     self.debug_rays.append(
-                        (ray_start, ray_start + ray_direction.normalize().scale(100),
-                         (random.random(), random.random(),
-                          random.random())  # Random color
-                    ))
+                        (ray_start, ray_start + ray_direction.normalize().scale(100) + Vec3(
+                            random.uniform(-0.1, 0.1),
+                            random.uniform(-0.1, 0.1),
+                            random.uniform(-0.1, 0.1)
+                        ), (random.random(), random.random(),
+                            random.random()), self.time  # Add a timestamp for the ray
+                        ))
                     if raycast_result:
-                        print("Hit object:", raycast_result["name"])
+                        if raycast_result["id"] == 10:
+                            # If the hit object is the enemy, apply damage
+                            print("Hit enemy!")
+                            raycast_result["object"].apply_damage(10)  # Apply 10 damage
             else:
                 self.revolver_in_reload = True
 
@@ -1469,6 +1479,42 @@ class Game(arcade.Window):
             )
 
         return distance
+
+    def create_thick_line_geometry(self, ctx, start, end, thickness, orientation="horizontal", camera_up=Vec3(0, 1, 0)):
+        direction = (end - start).normalize()
+        if orientation == "horizontal":
+            right = direction.cross(camera_up).normalize()
+            if right.mag == 0:
+                right = Vec3(1, 0, 0)
+            offset = right.scale(thickness / 2)
+        elif orientation == "vertical":
+            # Use a vector perpendicular to both direction and right (which is camera_up)
+            right = direction.cross(camera_up).normalize()
+            up = right.cross(direction).normalize()
+            if up.mag == 0:
+                up = Vec3(0, 1, 0)
+            offset = up.scale(thickness / 2)
+        else:
+            raise ValueError("orientation must be 'horizontal' or 'vertical'")
+
+        v0 = start + offset
+        v1 = start - offset
+        v2 = end - offset
+        v3 = end + offset
+        vertices = array('f', [
+            v0.x, v0.y, v0.z,
+            v1.x, v1.y, v1.z,
+            v2.x, v2.y, v2.z,
+            v3.x, v3.y, v3.z,
+        ])
+        indices = array('I', [0, 1, 2, 0, 2, 3])
+        vertex_buffer = ctx.buffer(data=vertices.tobytes())
+        index_buffer = ctx.buffer(data=indices.tobytes())
+        return ctx.geometry(
+            content=[BufferDescription(vertex_buffer, "3f", ("in_pos",))],
+            index_buffer=index_buffer,
+            mode=ctx.TRIANGLES,
+        )
 
 
 if __name__ == "__main__":

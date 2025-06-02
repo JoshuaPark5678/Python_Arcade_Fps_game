@@ -344,12 +344,39 @@ def get_doors(program):
     ]
     return doors
 
+def get_enemy_walls():
+    """Get the walls that only for enemies.
+    These walls are invisible to player but visible to enemies.
+    """
+    uv = 2
+    walls = [
+        {
+            "name": "enemy_wall_001",
+            "buffer_data": [
+                # Position         UV
+                16, -2, -40,   0, 1,  # Bottom Left
+                16,  6,  -40,   0, 0,   # Top Left
+                28, -2, -40,   1, 1,  # Bottom Right
+                28,  6,  -40,   1, 0,  # Top Right
+            ],
+        },
+    ]
+    return walls
+
 
 def get_Enemies(program):
     enemies = [
         {
             "name": "enemy1_001",
-            "object": enemy.Enemy(get_walls(), Vec3(0, -2, -20), 100, Vec3(0, 0, 0)),
+            "object": enemy.Enemy(get_walls(), get_enemy_walls(), Vec3(35, -2, -30), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "buffer_data": Vec3(0, -2, -20),
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy1_002",
+            "object": enemy.Enemy(get_walls(), get_enemy_walls(), Vec3(35, -2, -20), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "buffer_data": Vec3(0, -2, -20),

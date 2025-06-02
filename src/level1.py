@@ -3,7 +3,7 @@ from pyglet.math import Mat4, Vec3
 
 import enemy
 
-def get_walls(program = None):
+def get_walls():
     """Get the wall objects for the level.
     walls dimensions are 8x8 and have 0 width
     """
@@ -349,7 +349,7 @@ def get_Enemies(program):
     enemies = [
         {
             "name": "enemy1_001",
-            "object": enemy.Enemy(Vec3(0, -2, -20), 100, Vec3(0, 0, 0), get_walls(), []),
+            "object": enemy.Enemy(get_walls(), Vec3(0, -2, -20), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "buffer_data": Vec3(0, -2, -20),

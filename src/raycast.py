@@ -30,7 +30,7 @@ def ray_intersects_triangle(ray_origin, ray_dir, v0, v1, v2):
         return False, None
 
 
-def ray_intersects_aabb(self, ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z):
+def ray_intersects_aabb(ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z):
     t_min = (min_x - ray_start.x) / \
         ray_direction.x if ray_direction.x != 0 else float('-inf')
     t_max = (max_x - ray_start.x) / \
@@ -77,14 +77,20 @@ def ray_intersects_aabb(self, ray_start, ray_direction, min_x, max_x, min_y, max
     return True, t_min if t_min > 0 else t_max
 
 
-def raycast(self, ray_start, ray_direction, ray_length=100):
-    ray_end = (ray_start + ray_direction).normalize().scale(ray_length)
+def raycast(ray_start, ray_direction, objects, ray_length=100):
+    from pyglet.math import Vec3
+
+    # Ensure ray_direction is normalized
+    if hasattr(ray_direction, "normalize"):
+        ray_direction = ray_direction.normalize()
+    else:
+        ray_direction = Vec3(*ray_direction).normalize()
 
     closest_hit = None
     closest_distance = float('inf')
 
     # Iterate through all objects in the scene
-    for obj in self.objects:
+    for obj in objects:
         if obj["id"] == 1:  # Wall
             positions = obj["buffer_data"]
             num_vertices = len(positions) // 5
@@ -97,29 +103,25 @@ def raycast(self, ray_start, ray_direction, ray_length=100):
             max_z = max(positions[i * 5 + 2] for i in range(num_vertices))
 
             hit, distance = ray_intersects_aabb(
-                self, ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z
+                ray_start, ray_direction, min_x, max_x, min_y, max_y, min_z, max_z
             )
-            if hit and distance < closest_distance:
+            # Only consider hits within ray_length
+            if hit and 0 <= distance <= ray_length and distance < closest_distance:
                 closest_hit = obj
                 closest_distance = distance
 
         if obj["id"] == 10:
             # gltf model
-            # check to see if the ray went through the geometry of the gltf model
-            # get the geometry of the gltf model
             body = obj["geometry"][2]
             positions = body["positions"]  # Use the mesh's vertex positions
             indices = body["indices"] if "indices" in body else None
             if indices:
                 num_triangles = len(indices) // 3
-                # If this is the model's world position (Vec3)
                 model_origin = obj["object"].get_world_position()
                 for i in range(num_triangles):
-                    # Get the vertices of the triangle
                     idx0 = indices[i * 3]
                     idx1 = indices[i * 3 + 1]
                     idx2 = indices[i * 3 + 2]
-                    # Get the positions of the vertices relative to the gltf model
                     v0 = Vec3(
                         positions[idx0 * 3] + model_origin.x,
                         positions[idx0 * 3 + 1] + model_origin.y,
@@ -135,11 +137,10 @@ def raycast(self, ray_start, ray_direction, ray_length=100):
                         positions[idx2 * 3 + 1] + model_origin.y,
                         positions[idx2 * 3 + 2] + model_origin.z
                     )
-                    # Check for intersection with the triangle
                     hit, distance = ray_intersects_triangle(
                         ray_start, ray_direction, v0, v1, v2)
-                    # If the ray intersects the triangle, check if it's the closest hit
-                    if hit and distance < closest_distance:
+                    # Only consider hits within ray_length
+                    if hit and 0 <= distance <= ray_length and distance < closest_distance:
                         closest_hit = obj
                         closest_distance = distance
 

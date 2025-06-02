@@ -53,58 +53,7 @@ class Game(arcade.Window):
         self.texture1 = None
         self.texture2 = None
         self.texture3 = None
-
-        # try:
-        #     # Shader program for the object
-        #     self.GLTF_program = self.ctx.program(
-        #         vertex_shader="""
-        #         #version 330
-
-        #         uniform mat4 projection;
-        #         uniform mat4 model;
-        #         uniform mat4 u_joint_matrices[16]; // Adjust size if needed
-
-        #         in vec3 in_pos;
-        #         in vec2 in_uv;
-        #         in uvec4 in_joints;
-        #         in vec4 in_weights;
-
-        #         out vec2 uv;
-
-        #         void main() {
-        #             mat4 skin =
-        #                 u_joint_matrices[in_joints.x] * in_weights.x +
-        #                 u_joint_matrices[in_joints.y] * in_weights.y +
-        #                 u_joint_matrices[in_joints.z] * in_weights.z +
-        #                 u_joint_matrices[in_joints.w] * in_weights.w;
-
-        #             vec4 skinned_pos = skin * vec4(in_pos, 1.0);
-        #             if (length(skinned_pos) == 0.0) {
-        #                 skinned_pos = vec4(in_pos, 1.0);
-        #             }
-        #             // Apply the model and projection matrices
-        #             gl_Position = projection * model * skinned_pos;
-
-        #             uv = in_uv;
-        #         }
-        #         """,
-        #         fragment_shader="""
-        #         #version 330
-
-        #         uniform vec4 base_color_factor;  // Base color (RGBA)
-
-        #         in vec2 uv;  // UV coordinates from the vertex shader
-        #         out vec4 fragColor;
-
-        #         void main() {
-        #             vec4 base_color = base_color_factor;
-
-        #             fragColor = base_color;  // Output the final color
-        #         }
-        #         """
-        #     )
-        # except Exception as e:
-        #     print(f"Error creating shader program: {e}")
+        
         try:
             # Shader program for the object
             self.GLTF_program = self.ctx.program(
@@ -375,7 +324,7 @@ class Game(arcade.Window):
         self.wall = self.plane  # Use the same shader for walls
 
         # Walls with buffer data and positions
-        self.walls = level1.get_walls(self.plane)
+        self.walls = level1.get_walls()
 
         # Add the walls to the list of objects
         # Add geometry to the walls
@@ -504,7 +453,7 @@ class Game(arcade.Window):
                 0, 0, self.screen_width, self.screen_height, arcade.color.BLACK)
             # Draw loading bar
             loading_bar_width = (self.currentLoading / self.totalLoading)
-            print(f"Loading textures... {self.currentLoading}/{self.totalLoading} ({loading_bar_width * 100:.2f}%)")
+            arcade.draw_text(f"Loading textures... {self.currentLoading}/{self.totalLoading} ({loading_bar_width * 100:.2f}%)", self.screen_width // 2, self.screen_height // 3, arcade.color.WHITE, 12, anchor_x="center", anchor_y="center")
             #draw outline
             arcade.draw_xywh_rectangle_outline(
                 self.screen_width // 2 - 100, self.screen_height // 2 - 10, 200, 20, arcade.color.WHITE, 2)
@@ -614,6 +563,23 @@ class Game(arcade.Window):
 
         # draw UI
         self.draw_UI()
+
+        # Draw pause overlay if paused
+        if self.is_paused:
+            arcade.draw_lrtb_rectangle_filled(
+                0, self.screen_width, self.screen_height, 0, (0, 0, 0, 180)
+            )
+            arcade.draw_text(
+                "PAUSED",
+                self.screen_width // 2,
+                self.screen_height // 2,
+                arcade.color.WHITE,
+                48,
+                anchor_x="center",
+                anchor_y="center",
+                bold=True,
+            )
+            return  # Skip drawing the rest of the game when paused
 
     def draw_UI(self):
         try:
@@ -829,6 +795,9 @@ class Game(arcade.Window):
             # If textures are not loaded, skip the update
             return
         
+        if self.is_paused:
+            return  # Skip updating the game when paused
+        
         # Update object list
         self.objects.sort(key=self.get_distance, reverse=True)
 
@@ -838,7 +807,7 @@ class Game(arcade.Window):
 
         for obj in self.objects:
             if obj["id"] == 10:
-                obj["object"].move(self.camera_pos)
+                obj["object"].move(-self.camera_pos)
 
         # Update the revolver animation frame
         if self.is_ADS:
@@ -1178,6 +1147,16 @@ class Game(arcade.Window):
             self.camera_rot.x = math.pi / 2
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.ESCAPE:
+            self.is_paused = not self.is_paused
+            self.mouse_locked = not self.is_paused
+            self.set_mouse_visible(not self.mouse_locked)
+            self.set_exclusive_mouse(self.mouse_locked)
+            return  # Don't process other actions when toggling pause
+
+        if self.is_paused:
+            return  # Ignore other keys while paused
+
         if not self.isLoaded:
             # If textures are not loaded, skip key presses
             return
@@ -1264,8 +1243,7 @@ class Game(arcade.Window):
                     0,
                     -math.cos(math.radians(angle)),
                 )
-                raycast_result = raycast.raycast(
-                    self, ray_start, ray_direction)
+                raycast_result = raycast.raycast(ray_start, ray_direction, self.objects)
                 self.debug_rays.append(
                     (ray_start, ray_start + ray_direction.normalize().scale(100),
                      (random.random(), random.random(), random.random())  # Random color
@@ -1338,8 +1316,7 @@ class Game(arcade.Window):
                         -math.sin(self.camera_rot.x),
                         -math.cos(self.camera_rot.y),
                     )
-                    raycast_result = raycast.raycast(
-                        self, ray_start, ray_direction)
+                    raycast_result = raycast.raycast(ray_start, ray_direction, self.objects)
                     self.debug_rays.append(
                         (ray_start, ray_start + ray_direction.normalize().scale(100),
                          (random.random(), random.random(),

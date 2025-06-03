@@ -22,7 +22,22 @@ import enemy
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-
+class Player:
+    def __init__(self):
+        self.health = 10  # Player's health
+        self.max_health = 10  # Player's maximum health
+        self.is_alive = True  # Player's alive status
+        
+    def apply_damage(self, damage):
+        """
+        Apply damage to the player and check if the player is still alive.
+        """
+        self.health -= damage
+        if self.health <= 0:
+            self.is_alive = False
+            self.health = 0
+        
+        
 class Game(arcade.Window):
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -379,6 +394,9 @@ class Game(arcade.Window):
         # projectiles
         self.projectiles = []  # List to store projectiles
 
+        # set up the player
+        self.player = Player()  # Create a player instance
+        
         # Money
         self.player_currency = 0  # Player's currency
 
@@ -429,7 +447,7 @@ class Game(arcade.Window):
                        f"{self.file_dir}/models/crazy_boy_test.bin"]
 
         # Initialize the enemy list
-        self.enemies = level1.get_Enemies(self.GLTF_program)
+        self.enemies = level1.get_Enemies(self.player, self.GLTF_program)
 
         self.enemy1_gltf = GLTF2().load(enemy1_path[0])
 
@@ -457,6 +475,8 @@ class Game(arcade.Window):
 
         # Each ray is (start: Vec3, end: Vec3, color: tuple)
         self.debug_rays = []
+        
+        
 
     def on_draw(self):
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
@@ -678,8 +698,9 @@ class Game(arcade.Window):
                 self.screen_width // 2, self.screen_height // 22, self.screen_width // 8, self.screen_height // 14, arcade.color.DARK_GRAY)
             arcade.draw_text("Health", self.screen_width // 2, self.screen_height // 16,
                              arcade.color.BLACK, 12, font_name="Kenney Future", anchor_x="center", anchor_y="center", bold=True)
-            arcade.draw_rectangle_filled(
-                self.screen_width // 2, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.RED)
+            arcade.draw_xywh_rectangle_filled(
+                self.screen_width // 2 - (self.screen_width // 8) / 2, self.screen_height // 22 - (self.screen_height // 28), self.screen_width // 8 * (self.player.health / self.player.max_health), self.screen_height // 32, arcade.color.RED)
+
             for i in range(1, 6):
                 # evenly cut the health bar into 5 parts
                 arcade.draw_rectangle_outline(
@@ -823,7 +844,7 @@ class Game(arcade.Window):
         # set mouse active
         self.set_mouse_visible(not self.mouse_locked)
         self.set_exclusive_mouse(self.mouse_locked)
-
+        
         for obj in self.objects:
             if obj["id"] == 10:
                 obj["object"].move(-self.camera_pos)
@@ -1516,6 +1537,6 @@ class Game(arcade.Window):
             mode=ctx.TRIANGLES,
         )
 
-
 if __name__ == "__main__":
-    Game().run()
+    game = Game()
+    game.run()

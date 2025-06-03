@@ -364,11 +364,11 @@ def get_enemy_walls():
     return walls
 
 
-def get_Enemies(program):
+def get_Enemies(player, program):
     enemies = [
         {
             "name": "enemy1_001",
-            "object": enemy.Enemy(get_walls(), get_enemy_walls(), Vec3(35, -2, -30), 100, Vec3(0, 0, 0)),
+            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -30), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "buffer_data": Vec3(0, -2, -20),
@@ -376,7 +376,7 @@ def get_Enemies(program):
         },
         {
             "name": "enemy1_002",
-            "object": enemy.Enemy(get_walls(), get_enemy_walls(), Vec3(35, -2, -20), 100, Vec3(0, 0, 0)),
+            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -20), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "buffer_data": Vec3(0, -2, -20),

@@ -10,11 +10,13 @@ import math
 import time
 
 import raycast
+import main
 
 class Enemy():
-    def __init__(self, walls, enemy_walls, position = Vec3(0, 0, 0), health = 100, rotation = Vec3(0, 0, 0)):
+    def __init__(self, player, walls, enemy_walls, position = Vec3(0, 0, 0), health = 100, rotation = Vec3(0, 0, 0)):
         self.is_alive = True
-        
+
+        self.player = player
         self.position = position
         self.return_position = position
         self.speed = 0.1
@@ -85,6 +87,11 @@ class Enemy():
     def attack_player(self, player_position):
         # Implement your attack logic here
         print("Attacking player at:", player_position)
+        
+        # find the player class and apply damage
+        if hasattr(self.player, 'apply_damage'):
+            self.player.apply_damage(self.attack_damage)
+        
         self.last_attack_time = time.time()
         
     def get_world_position(self):

@@ -7,6 +7,7 @@ from pygltflib import GLTF2
 import numpy as np
 import os
 import math
+import time
 
 import raycast
 
@@ -20,7 +21,12 @@ class Enemy():
         
         self.health = health
         self.rotation = rotation
-        
+
+        self.attack_damage = 1
+        self.attack_range = 3.0
+        self.attack_cooldown = 3  # Time between attacks in milliseconds
+        self.last_attack_time = time.time()  # Time when the last attack occurred
+
         self.walls = []
         for wall in walls: 
             wall["id"] = 1  # Assign id = 1 to each wall
@@ -32,6 +38,7 @@ class Enemy():
         self.proximity_radius = 40.0  # Distance within which the enemy will detect the player
 
     def move(self, player_position):
+        
         # Check if player is within a certain distance
         distance_to_player = math.sqrt(
             (self.position.x - player_position.x) ** 2 +
@@ -45,6 +52,9 @@ class Enemy():
             forward = Vec3(
                 math.sin(self.rotation.y), 0, math.cos(self.rotation.y)).scale(self.speed)
             self.position += forward
+        elif distance_to_player <= 3.0 and self.is_player_in_sight(player_position) and time.time() - self.last_attack_time > self.attack_cooldown:
+            # If player is very close and in sight, attack or perform some action
+            self.attack_player(player_position)
         else:
             # If player is not in sight, return to original position
             if self.position != self.return_position:
@@ -72,6 +82,11 @@ class Enemy():
 
         return not raycast.raycast(ray_start, ray_direction, self.walls, distance_to_player)
 
+    def attack_player(self, player_position):
+        # Implement your attack logic here
+        print("Attacking player at:", player_position)
+        self.last_attack_time = time.time()
+        
     def get_world_position(self):
         return self.position
     

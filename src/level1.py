@@ -384,3 +384,10 @@ def get_Enemies(player, program):
         }
     ]
     return enemies
+
+def get_exit():
+    exit = {
+        "name": "exit_001",
+        "model": Vec3(0, 1, 0),
+    }
+    return exit

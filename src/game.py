@@ -13,7 +13,12 @@ import random
 import threading
 
 # Import the necessary files
+
+# ----- LEVELS ----- #
 import level1
+import level2
+
+# ----- UTILS ----- #
 import gltf_utils
 import raycast
 
@@ -23,8 +28,8 @@ SCREEN_HEIGHT = 720
 
 class Player:
     def __init__(self):
-        self.health = 10  # Player's health
-        self.max_health = 10  # Player's maximum health
+        self.health = 5  # Player's health
+        self.max_health = 5  # Player's maximum health
         self.is_alive = True  # Player's alive status
 
     def apply_damage(self, damage):
@@ -48,9 +53,15 @@ class Game(arcade.Window):
 
         self.icon = pyglet.image.load(f"{self.file_dir}/texture/cat1.jpg")
         arcade.get_window().set_icon(self.icon)
+        
+        self.levels = [
+            level1,
+            level2
+        ]
 
         # debug variable
         self.debugVal = 0
+        self.debugMode = True  # Debug mode flag
 
         # SCREEN DIMENSIONS
         self.screen_width = SCREEN_WIDTH
@@ -170,21 +181,31 @@ class Game(arcade.Window):
             out vec3 frag_pos;  // Pass the fragment position to the fragment shader
             out vec3 normal;    // Pass the normal to the fragment shader
             out vec2 uv;        // Pass the UV coordinates to the fragment shader
+            out float local_y;
 
             void main() {
                 frag_pos = (model * vec4(in_pos, 1.0)).xyz;
                 normal = mat3(model) * in_normal;  // Transform the normal
                 uv = in_uv;  // Pass UV coordinates
+                local_y = in_pos.y;  // Pass the local Y position
                 gl_Position = projection * model * vec4(in_pos, 1.0);
             }
             """,
             fragment_shader="""
             #version 330
-            uniform vec3 color;
+            in vec3 frag_pos;
+            in vec2 uv;
+            in float local_y;  // Receive the local Y position
+            uniform float time;  // <-- Add this line
             out vec4 fragColor;
 
             void main() {
-                fragColor = vec4(color, 1.0);  // Use the material color
+                // Animate the gradient with time
+                float t = clamp((local_y + 1.5 + sin(time)) / 4.0, 0.0, 1.0);
+                vec3 color_bottom = vec3(0.09, 0.6, 0.8);
+                vec3 color_top = vec3(1.0, 0.2, 0.8);
+                vec3 color = mix(color_bottom, color_top, t);
+                fragColor = vec4(color, 1.0);
             }
             """
         )
@@ -286,6 +307,9 @@ class Game(arcade.Window):
         self.fov = 90  # Field of view
 
         self.is_paused = False  # Flag to track if the game is paused
+        
+        # set up the player
+        self.player = Player()  # Create a player instance
 
         # set up the ground
         self.proj = Mat4.perspective_projection(
@@ -350,46 +374,8 @@ class Game(arcade.Window):
         # Bind the wall texture to the shader program
         self.wall = self.plane  # Use the same shader for walls
 
-        # Walls with buffer data and positions
-        self.walls = level1.get_walls()
-
-        # Add the walls to the list of objects
-        # Add geometry to the walls
-        for wall in self.walls:
-            self.objects.append(wall)
-            wall_buffer = self.ctx.buffer(data=array('f', wall["buffer_data"]))
-            wall["id"] = 1
-            wall["texture"] = 1  # Set texture ID for walls
-            # Use the same shader program for walls
-            wall["program"] = self.plane
-            wall["opacity"] = 1.0  # Set default opacity for walls
-            wall["geometry"] = self.ctx.geometry(
-                content=[BufferDescription(
-                    wall_buffer, "3f 2f", ("in_pos", "in_uv"))],
-                mode=self.ctx.TRIANGLE_STRIP,  # Use TRIANGLE_STRIP for walls
-            )
-
-        self.doors = level1.get_doors(self.plane)
-
-        # Add the doors to the list of objects
-        for door in self.doors:
-            self.objects.append(door)
-            door_buffer = self.ctx.buffer(data=array('f', door["buffer_data"]))
-            door["id"] = 2
-            door["geometry"] = self.ctx.geometry(
-                content=[BufferDescription(
-                    door_buffer, "3f 2f", ("in_pos", "in_uv"))],
-                mode=self.ctx.TRIANGLE_STRIP,  # Use TRIANGLE_STRIP for doors
-            )
-            
-        # get exit portal
-        self.exit_portal = level1.get_exit()
-        self.exit_portal["id"] = 3
-        self.exit_portal["program"] = self.sphere_program
-        self.exit_portal["geometry"] = self.generate_sphere(
-            2, 16, 16, position=self.exit_portal["model"])
-        self.objects.append(self.exit_portal)
-
+        self.load_level(1)  # Load the first level
+        
         # Movement flags
         self.movement = {
             "forward": False,
@@ -400,9 +386,6 @@ class Game(arcade.Window):
 
         # projectiles
         self.projectiles = []  # List to store projectiles
-
-        # set up the player
-        self.player = Player()  # Create a player instance
 
         # Money
         self.player_currency = 0  # Player's currency
@@ -445,7 +428,7 @@ class Game(arcade.Window):
         self.revolver_reload_frame = 0  # Frame index for the reload animation
 
         self.isLoaded = False  # Flag to check if the textures are loaded
-        self.debugMode = True  # Debug mode flag
+        
         threading.Thread(target=self.setup_revolver_textures,
                          daemon=True).start()
 
@@ -552,10 +535,10 @@ class Game(arcade.Window):
                 obj["geometry"].render(obj["program"])
             elif obj["id"] == 3:
                 # Render the exit portal
+                # self.time is your game's running time
+                self.exit_portal["program"]["time"] = self.time * 2
                 self.exit_portal["program"]["projection"] = self.proj
                 self.exit_portal["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z
-                self.exit_portal["program"]["color"] = (
-                    0.09, 0.6, 0.8)  # Set color to light blue
                 self.exit_portal["geometry"].render(self.exit_portal["program"])
             elif obj["id"] == 4:
                 # Render projectiles
@@ -852,7 +835,7 @@ class Game(arcade.Window):
         # set mouse active
         self.set_mouse_visible(not self.mouse_locked)
         self.set_exclusive_mouse(self.mouse_locked)
-
+        
         enemy_count = 0  # Count the number of enemies
         for obj in self.objects:
             if obj["id"] == 10:
@@ -962,7 +945,7 @@ class Game(arcade.Window):
                     self.current_frame = 0
                     self.cylinder_spin = 0
                     self.weapon_anim_running = False  # Stop the animation after one cycle
-
+        
         for obj in self.objects:
             if obj["id"] == 4:
                 # Update the projectile's position based on its velocity
@@ -990,6 +973,19 @@ class Game(arcade.Window):
 
                 # Update the enemy's rotation
                 obj["object"].rotation.y = yaw  # Convert to degrees
+
+        # check if player walks into a exit portal
+        portal_radius = 2.0  # Define the radius of the exit portal
+        if self.exit_portal and self.exit_portal["id"] == 3:
+            distance_to_exit = math.sqrt(
+                (self.camera_pos.x + self.exit_portal["model"].x) ** 2 +
+                (self.camera_pos.y + self.exit_portal["model"].y) ** 2 +
+                (self.camera_pos.z + self.exit_portal["model"].z) ** 2
+            )
+            if distance_to_exit < portal_radius:
+                # Player has entered the exit portal
+                print("You have exited the level!")
+                self.exit_level()
 
         rotation_y = self.camera_rot.y
 
@@ -1432,9 +1428,9 @@ class Game(arcade.Window):
             for lon in range(lon_segments):
                 first = lat * (lon_segments + 1) + lon
                 second = first + lon_segments + 1
-
-                indices.extend([first, second, first + 1])
-                indices.extend([second, second + 1, first + 1])
+                if lon < lon_segments:
+                    indices.extend([first, second, first + 1])
+                    indices.extend([second, second + 1, first + 1])
 
         # return the vertices and indices as a tuple of arrays
         sphere_array = array('f', vertices), array('I', indices)
@@ -1557,3 +1553,92 @@ class Game(arcade.Window):
             index_buffer=index_buffer,
             mode=ctx.TRIANGLES,
         )
+        
+    def load_level(self, level):
+        self.isLoaded = False
+        # Load the level data from a file or other source
+        # Walls with buffer data and positions
+        self.walls = self.levels[level - 1].get_walls()
+
+        # Add the walls to the list of objects
+        # Add geometry to the walls
+        for wall in self.walls:
+            self.objects.append(wall)
+            wall_buffer = self.ctx.buffer(data=array('f', wall["buffer_data"]))
+            wall["id"] = 1
+            wall["texture"] = 1  # Set texture ID for walls
+            # Use the same shader program for walls
+            wall["program"] = self.plane
+            wall["opacity"] = 1.0  # Set default opacity for walls
+            wall["geometry"] = self.ctx.geometry(
+                content=[BufferDescription(
+                    wall_buffer, "3f 2f", ("in_pos", "in_uv"))],
+                mode=self.ctx.TRIANGLE_STRIP,  # Use TRIANGLE_STRIP for walls
+            )
+
+        self.doors = self.levels[level - 1].get_doors(self.plane)
+
+        # Add the doors to the list of objects
+        for door in self.doors:
+            self.objects.append(door)
+            door_buffer = self.ctx.buffer(data=array('f', door["buffer_data"]))
+            door["id"] = 2
+            door["geometry"] = self.ctx.geometry(
+                content=[BufferDescription(
+                    door_buffer, "3f 2f", ("in_pos", "in_uv"))],
+                mode=self.ctx.TRIANGLE_STRIP,  # Use TRIANGLE_STRIP for doors
+            )
+
+        # get exit portal
+        self.exit_portal = self.levels[level - 1].get_exit()
+        self.exit_portal["id"] = 3
+        self.exit_portal["program"] = self.sphere_program
+        self.exit_portal["geometry"] = self.generate_sphere(
+            2, 16, 16, position=self.exit_portal["model"])
+        self.objects.append(self.exit_portal)
+        
+        threading.Thread(target=self.setup_revolver_textures,
+                         daemon=True).start()
+
+        enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
+                       f"{self.file_dir}/models/crazy_boy_test.bin"]
+
+        # Initialize the enemy list
+        self.enemies = self.levels[level - 1].get_Enemies(self.player, self.GLTF_program)
+
+        self.enemy1_gltf = GLTF2().load(enemy1_path[0])
+
+        with open(enemy1_path[1], "rb") as f:
+            self.enemy1_bin_data = f.read()
+
+        # Add the enemy to the list of objects
+        for enemy in self.enemies:
+            self.objects.append(enemy)
+            enemy["geometry"] = gltf_utils.load_gltf(
+                self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
+            
+        self.isLoaded = True
+
+    def exit_level(self):
+        # Logic to exit the level, e.g., load the next level or return to the main menu
+        self.isLoaded = False
+        print("Exiting level...")
+        self.change_level(2)
+
+    def change_level(self, level):
+        # Clear existing objects and walls
+        self.objects.clear()
+        self.walls.clear()
+        self.doors.clear()
+        self.exit_portal = None
+
+        # Load the new level
+        self.load_level(level)
+
+        # Reset camera position and rotation
+        self.camera_pos = Vec3(0, 0, 0)
+        self.camera_rot = Vec3(0, 0, 0)
+        self.is_on_ground = True
+        self.vertical_velocity = 0
+        self.current_speed = 0
+        self.movement_vector = Vec3(0, 0, 0)

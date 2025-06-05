@@ -371,7 +371,6 @@ def get_Enemies(player, program):
             "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -30), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
-            "buffer_data": Vec3(0, -2, -20),
             "rotation": Vec3(0, 0, 0),
         },
         {
@@ -379,7 +378,6 @@ def get_Enemies(player, program):
             "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -20), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
-            "buffer_data": Vec3(0, -2, -20),
             "rotation": Vec3(0, 0, 0),
         }
     ]
@@ -388,6 +386,6 @@ def get_Enemies(player, program):
 def get_exit():
     exit = {
         "name": "exit_001",
-        "model": Vec3(0, 1, 0),
+        "model": Vec3(10, 1, 2),
     }
     return exit

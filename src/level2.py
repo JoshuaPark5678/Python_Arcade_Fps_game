@@ -45,10 +45,90 @@ def get_walls():
                 # Position         UV
                 -4, -2, -4,       0, uv,  # Bottom Left
                 -4, 6, -4,        0, 0,   # Top Left
-                -16, -2, -4,      uv, uv,  # Bottom Right
-                -16, 6, -4,       uv, 0,  # Top Right
+                -4, -2, -12,      uv, uv,  # Bottom Right
+                -4, 6, -12,       uv, 0,  # Top Right
             ],
-        }
+        },
+        {
+            "name": "wall_005",
+            "buffer_data": [
+                # Position         UV
+                4, -2, -4,       0, uv,  # Bottom Left
+                4, 6, -4,        0, 0,   # Top Left
+                4, -2, -12,      uv, uv,  # Bottom Right
+                4, 6, -12,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_006",
+            "buffer_data": [
+                # Position         UV
+                -4, -2, -12,       0, uv,  # Bottom Left
+                -4, 6, -12,        0, 0,   # Top Left
+                -4, -2, -20,      uv, uv,  # Bottom Right
+                -4, 6, -20,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_007",
+            "buffer_data": [
+                # Position         UV
+                4, -2, -12,       0, uv,  # Bottom Left
+                4, 6, -12,        0, 0,   # Top Left
+                4, -2, -20,      uv, uv,  # Bottom Right
+                4, 6, -20,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_008",
+            "buffer_data": [
+                # Position         UV
+                4, -2, -20,       0, uv,  # Bottom Left
+                4, 6, -20,        0, 0,   # Top Left
+                12, -2, -20,      uv, uv,  # Bottom Right
+                12, 6, -20,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_009",
+            "buffer_data": [
+                # Position         UV
+                -4, -2, -20,       0, uv,  # Bottom Left
+                -4, 6, -20,        0, 0,   # Top Left
+                -12, -2, -20,      uv, uv,  # Bottom Right
+                -12, 6, -20,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0010",
+            "buffer_data": [
+                # Position         UV
+                4, -2, -28,       0, uv,  # Bottom Left
+                4, 6, -28,        0, 0,   # Top Left
+                12, -2, -28,      uv, uv,  # Bottom Right
+                12, 6, -28,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0011",
+            "buffer_data": [
+                # Position         UV
+                -4, -2, -28,       0, uv,  # Bottom Left
+                -4, 6, -28,        0, 0,   # Top Left
+                -12, -2, -28,      uv, uv,  # Bottom Right
+                -12, 6, -28,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0012",
+            "buffer_data": [
+                # Position         UV
+                4, -2, -28,       0, uv,  # Bottom Left
+                4, 6, -28,        0, 0,   # Top Left
+                -4, -2, -28,      uv, uv,  # Bottom Right
+                -4, 6, -28,       uv, 0,  # Top Right
+            ],
+        },
     ]
     return walls
 

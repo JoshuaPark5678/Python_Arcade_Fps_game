@@ -61,7 +61,7 @@ class Game(arcade.Window):
 
         # debug variable
         self.debugVal = 0
-        self.debugMode = True  # Debug mode flag
+        self.debugMode = False  # Debug mode flag
 
         # SCREEN DIMENSIONS
         self.screen_width = SCREEN_WIDTH
@@ -374,6 +374,9 @@ class Game(arcade.Window):
         # Bind the wall texture to the shader program
         self.wall = self.plane  # Use the same shader for walls
 
+        self.enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
+                       f"{self.file_dir}/models/crazy_boy_test.bin"]
+        
         self.load_level(1)  # Load the first level
         
         # Movement flags
@@ -431,24 +434,6 @@ class Game(arcade.Window):
         
         threading.Thread(target=self.setup_revolver_textures,
                          daemon=True).start()
-
-        start = time.time()
-        enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
-                       f"{self.file_dir}/models/crazy_boy_test.bin"]
-
-        # Initialize the enemy list
-        self.enemies = level1.get_Enemies(self.player, self.GLTF_program)
-
-        self.enemy1_gltf = GLTF2().load(enemy1_path[0])
-
-        with open(enemy1_path[1], "rb") as f:
-            self.enemy1_bin_data = f.read()
-
-        # Add the enemy to the list of objects
-        for enemy in self.enemies:
-            self.objects.append(enemy)
-            enemy["geometry"] = gltf_utils.load_gltf(
-                self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
 
         # Set ammos
         self.max_ammo = 5  # Maximum ammo count
@@ -574,19 +559,6 @@ class Game(arcade.Window):
                     enemy_geometry["geometry"].render(obj["program"])
 
         for ray_start, ray_end, color, timestamp in self.debug_rays:
-            # Horizontal quad (as before)
-            line_geometry_h = self.create_thick_line_geometry(
-                self.ctx, ray_start, ray_end, thickness=0.1, orientation="horizontal")
-            self.line_program["projection"] = self.proj
-            self.line_program["model"] = translate @ rotate_y @ rotate_x @ rotate_z
-            self.line_program["color"] = color
-            line_geometry_h.render(self.line_program)
-
-            # Vertical quad (new)
-            line_geometry_v = self.create_thick_line_geometry(
-                self.ctx, ray_start, ray_end, thickness=0.1, orientation="vertical")
-            self.line_program["color"] = color
-            line_geometry_v.render(self.line_program)
 
             # remove the exprired rays
             if self.time - timestamp > 0.5:  # Remove rays older than 0.5 seconds
@@ -885,29 +857,33 @@ class Game(arcade.Window):
             intFrame = int(self.revolver_reload_frame +
                            (self.revolver_reload_frame / 0.75 * 0.25))
 
-            if intFrame > 15 and intFrame < 21:
-                try:
-                    self.chamber[intFrame - 16] = 0
-                except IndexError:
-                    self.chamber.append(0)
+            try:
+                if intFrame > 15 and intFrame < 21:
+                    try:
+                        self.chamber[intFrame - 16] = 0
+                    except IndexError:
+                        self.chamber.append(0)
 
-            if intFrame > 39 and intFrame < 45:
-                self.chamber[intFrame - 40] = 1
-            # spin the cylinder during reload
+                if intFrame > 39 and intFrame < 45:
+                    self.chamber[intFrame - 40] = 1
+                # spin the cylinder during reload
 
-            if intFrame > 41:
-                self.cylinder_spin += 12
-                # Reset the spin if it exceeds 360 degrees
-                if self.cylinder_spin >= 360:
-                    self.cylinder_spin = self.cylinder_spin - 360
-
-            else:
-                if intFrame > 12:
-                    # spin the cylinder
-                    self.cylinder_spin -= 4
+                if intFrame > 41:
+                    self.cylinder_spin += 12
                     # Reset the spin if it exceeds 360 degrees
                     if self.cylinder_spin >= 360:
-                        self.cylinder_spin = 0
+                        self.cylinder_spin = self.cylinder_spin - 360
+
+                else:
+                    if intFrame > 12:
+                        # spin the cylinder
+                        self.cylinder_spin -= 4
+                        # Reset the spin if it exceeds 360 degrees
+                        if self.cylinder_spin >= 360:
+                            self.cylinder_spin = 0
+            except IndexError:
+                # nothing
+                pass
 
             if intFrame == len(self.revolver_reload_textures)-1:
                 self.cylinder_spin = 0
@@ -1348,7 +1324,7 @@ class Game(arcade.Window):
                         -math.cos(self.camera_rot.y),
                     )
 
-                    raycast_result = raycast.raycast(
+                    raycast_result, hs = raycast.raycast(
                         ray_start, ray_direction, self.objects)
                     self.debug_rays.append(
                         (ray_start, ray_start + ray_direction.normalize().scale(100) + Vec3(
@@ -1362,8 +1338,13 @@ class Game(arcade.Window):
                         if raycast_result["id"] == 10:
                             # If the hit object is the enemy, apply damage
                             print("Hit enemy!")
-                            raycast_result["object"].apply_damage(
-                                10)  # Apply 10 damage
+                            if hs:
+                                raycast_result["object"].apply_damage(
+                                    20)  # Apply 20 damage for headshot
+                                print("Headshot!")
+                            else:
+                                raycast_result["object"].apply_damage(
+                                    10)  # Apply 10 damage if no headshot
             else:
                 self.revolver_in_reload = True
 
@@ -1517,42 +1498,6 @@ class Game(arcade.Window):
             )
 
         return distance
-
-    def create_thick_line_geometry(self, ctx, start, end, thickness, orientation="horizontal", camera_up=Vec3(0, 1, 0)):
-        direction = (end - start).normalize()
-        if orientation == "horizontal":
-            right = direction.cross(camera_up).normalize()
-            if right.mag == 0:
-                right = Vec3(1, 0, 0)
-            offset = right.scale(thickness / 2)
-        elif orientation == "vertical":
-            # Use a vector perpendicular to both direction and right (which is camera_up)
-            right = direction.cross(camera_up).normalize()
-            up = right.cross(direction).normalize()
-            if up.mag == 0:
-                up = Vec3(0, 1, 0)
-            offset = up.scale(thickness / 2)
-        else:
-            raise ValueError("orientation must be 'horizontal' or 'vertical'")
-
-        v0 = start + offset
-        v1 = start - offset
-        v2 = end - offset
-        v3 = end + offset
-        vertices = array('f', [
-            v0.x, v0.y, v0.z,
-            v1.x, v1.y, v1.z,
-            v2.x, v2.y, v2.z,
-            v3.x, v3.y, v3.z,
-        ])
-        indices = array('I', [0, 1, 2, 0, 2, 3])
-        vertex_buffer = ctx.buffer(data=vertices.tobytes())
-        index_buffer = ctx.buffer(data=indices.tobytes())
-        return ctx.geometry(
-            content=[BufferDescription(vertex_buffer, "3f", ("in_pos",))],
-            index_buffer=index_buffer,
-            mode=ctx.TRIANGLES,
-        )
         
     def load_level(self, level):
         self.isLoaded = False
@@ -1596,19 +1541,13 @@ class Game(arcade.Window):
         self.exit_portal["geometry"] = self.generate_sphere(
             2, 16, 16, position=self.exit_portal["model"])
         self.objects.append(self.exit_portal)
-        
-        threading.Thread(target=self.setup_revolver_textures,
-                         daemon=True).start()
-
-        enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
-                       f"{self.file_dir}/models/crazy_boy_test.bin"]
 
         # Initialize the enemy list
         self.enemies = self.levels[level - 1].get_Enemies(self.player, self.GLTF_program)
 
-        self.enemy1_gltf = GLTF2().load(enemy1_path[0])
+        self.enemy1_gltf = GLTF2().load(self.enemy1_path[0])
 
-        with open(enemy1_path[1], "rb") as f:
+        with open(self.enemy1_path[1], "rb") as f:
             self.enemy1_bin_data = f.read()
 
         # Add the enemy to the list of objects

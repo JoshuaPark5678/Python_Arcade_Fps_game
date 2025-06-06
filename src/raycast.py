@@ -88,7 +88,10 @@ def raycast(ray_start, ray_direction, objects, ray_length=100):
 
     closest_hit = None
     closest_distance = float('inf')
-
+    
+    # reverse the obj
+    objects = objects[::-1]
+    
     # Iterate through all objects in the scene
     for obj in objects:
         if obj["id"] == 1:  # Wall
@@ -107,8 +110,7 @@ def raycast(ray_start, ray_direction, objects, ray_length=100):
             )
             # Only consider hits within ray_length
             if hit and 0 <= distance <= ray_length and distance < closest_distance:
-                closest_hit = obj
-                closest_distance = distance
+                return obj, False
 
         if obj["id"] == 10:
             # gltf model
@@ -141,7 +143,10 @@ def raycast(ray_start, ray_direction, objects, ray_length=100):
                         ray_start, ray_direction, v0, v1, v2)
                     # Only consider hits within ray_length
                     if hit and 0 <= distance <= ray_length and distance < closest_distance:
-                        closest_hit = obj
-                        closest_distance = distance
+                        # if y coordinate of the hit point is greater than 0.5, return headshot
+                        if v0.y > 0.5 and v1.y > 0.5 and v2.y > 0.5:
+                            return obj, True
+                        else:
+                            return obj, False
 
-    return closest_hit
+    return None, False

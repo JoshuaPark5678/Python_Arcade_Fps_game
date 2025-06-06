@@ -93,7 +93,9 @@ class Enemy():
             (self.position.z - player_position.z) ** 2
         )
 
-        return not raycast.raycast(ray_start, ray_direction, self.walls, distance_to_player)
+        result, _ = raycast.raycast(ray_start, ray_direction, self.walls, ray_length=distance_to_player)
+        
+        return not result
 
     def attack_player(self, player_position):
         # Implement your attack logic here

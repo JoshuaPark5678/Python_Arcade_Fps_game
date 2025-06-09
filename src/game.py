@@ -228,8 +228,11 @@ class Game(arcade.Window):
         wall_texture = arcade.load_texture(
             f"{self.file_dir}/texture/default2.png"
         )
-        door_texture = arcade.load_texture(
+        green_door_texture = arcade.load_texture(
             f"{self.file_dir}/texture/green_door.png"
+        )
+        red_door_texture = arcade.load_texture(
+            f"{self.file_dir}/texture/red_door.png"
         )
         self.texture1 = self.ctx.texture(
             size=(ground_texture.width, ground_texture.height),
@@ -242,15 +245,21 @@ class Game(arcade.Window):
             data=wall_texture.image.tobytes(),
         )
         self.texture3 = self.ctx.texture(
-            size=(door_texture.width, door_texture.height),
+            size=(green_door_texture.width, green_door_texture.height),
             components=4,
-            data=door_texture.image.tobytes(),
+            data=green_door_texture.image.tobytes(),
+        )
+        self.texture4 = self.ctx.texture(
+            size=(red_door_texture.width, red_door_texture.height),
+            components=4,
+            data=red_door_texture.image.tobytes(),
         )
 
         # Set the texture filtering mode to GL_NEAREST to remove blurriness
         self.texture1.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture2.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture3.filter = self.ctx.NEAREST, self.ctx.NEAREST
+        self.texture4.filter = self.ctx.NEAREST, self.ctx.NEAREST
 
     def setup_revolver_textures(self):
         start = time.time()
@@ -513,7 +522,8 @@ class Game(arcade.Window):
                 obj["geometry"].render(obj["program"])
             elif obj["id"] == 2:
                 # Bind the wall texture to the shader program
-                self.texture3.use(obj["texture"])
+                self.texture3.use(3)
+                self.texture4.use(4)
                 obj["program"]["texture"] = obj["texture"]
                 obj["program"]["opacity"] = obj["opacity"]
                 obj["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z

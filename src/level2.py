@@ -5,7 +5,7 @@ import enemy
 
 def get_walls():
     """Get the wall objects for the level.
-    walls dimensions are 8x8 and have 0 width
+    walls dimensions are 12x8 and have 0 width
     """
     uv = 2
     walls = [
@@ -13,143 +13,232 @@ def get_walls():
             "name": "wall_001",
             "buffer_data": [
                 # Position         UV
-                -4, -2, 8,       0, uv,  # Bottom Left
-                -4, 6, 8,        0, 0,   # Top Left
-                4, -2, 8,        uv, uv,  # Bottom Right
-                4, 6, 8,         uv, 0,  # Top Right
+                -6, -2, 8,       0, uv,  # Bottom Left
+                -6, 6, 8,        0, 0,   # Top Left
+                6, -2, 8,        uv, uv,  # Bottom Right
+                6, 6, 8,         uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_002",
             "buffer_data": [
                 # Position         UV
-                -4, -2, -4,       0, uv,  # Bottom Left
-                -4, 6, -4,        0, 0,   # Top Left
-                -4, -2, 8,        uv, uv,  # Bottom Right
-                -4, 6, 8,         uv, 0,  # Top Right
+                -6, -2, -6,       0, uv,  # Bottom Left
+                -6, 6, -6,        0, 0,   # Top Left
+                -6, -2, 8,        uv, uv,  # Bottom Right
+                -6, 6, 8,         uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_003",
             "buffer_data": [
                 # Position         UV
-                4, -2, -4,       0, uv,  # Bottom Left
-                4, 6, -4,        0, 0,   # Top Left
-                4, -2, 8,        uv, uv,  # Bottom Right
-                4, 6, 8,         uv, 0,  # Top Right
+                6, -2, -6,       0, uv,  # Bottom Left
+                6, 6, -6,        0, 0,   # Top Left
+                6, -2, 8,        uv, uv,  # Bottom Right
+                6, 6, 8,         uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_004",
             "buffer_data": [
                 # Position         UV
-                -4, -2, -4,       0, uv,  # Bottom Left
-                -4, 6, -4,        0, 0,   # Top Left
-                -4, -2, -12,      uv, uv,  # Bottom Right
-                -4, 6, -12,       uv, 0,  # Top Right
+                -6, -2, -6,       0, uv,  # Bottom Left
+                -6, 6, -6,        0, 0,   # Top Left
+                -6, -2, -18,      uv, uv,  # Bottom Right
+                -6, 6, -18,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_005",
             "buffer_data": [
                 # Position         UV
-                4, -2, -4,       0, uv,  # Bottom Left
-                4, 6, -4,        0, 0,   # Top Left
-                4, -2, -12,      uv, uv,  # Bottom Right
-                4, 6, -12,       uv, 0,  # Top Right
+                6, -2, -6,       0, uv,  # Bottom Left
+                6, 6, -6,        0, 0,   # Top Left
+                6, -2, -18,      uv, uv,  # Bottom Right
+                6, 6, -18,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_006",
             "buffer_data": [
                 # Position         UV
-                -4, -2, -12,       0, uv,  # Bottom Left
-                -4, 6, -12,        0, 0,   # Top Left
-                -4, -2, -20,      uv, uv,  # Bottom Right
-                -4, 6, -20,       uv, 0,  # Top Right
+                -6, -2, -18,       0, uv,  # Bottom Left
+                -6, 6, -18,        0, 0,   # Top Left
+                -6, -2, -30,      uv, uv,  # Bottom Right
+                -6, 6, -30,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_007",
             "buffer_data": [
                 # Position         UV
-                4, -2, -12,       0, uv,  # Bottom Left
-                4, 6, -12,        0, 0,   # Top Left
-                4, -2, -20,      uv, uv,  # Bottom Right
-                4, 6, -20,       uv, 0,  # Top Right
+                6, -2, -18,       0, uv,  # Bottom Left
+                6, 6, -18,        0, 0,   # Top Left
+                6, -2, -30,      uv, uv,  # Bottom Right
+                6, 6, -30,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_008",
             "buffer_data": [
                 # Position         UV
-                4, -2, -20,       0, uv,  # Bottom Left
-                4, 6, -20,        0, 0,   # Top Left
-                12, -2, -20,      uv, uv,  # Bottom Right
-                12, 6, -20,       uv, 0,  # Top Right
+                6, -2, -30,       0, uv,  # Bottom Left
+                6, 6, -30,        0, 0,   # Top Left
+                18, -2, -30,      uv, uv,  # Bottom Right
+                18, 6, -30,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_009",
             "buffer_data": [
                 # Position         UV
-                -4, -2, -20,       0, uv,  # Bottom Left
-                -4, 6, -20,        0, 0,   # Top Left
-                -12, -2, -20,      uv, uv,  # Bottom Right
-                -12, 6, -20,       uv, 0,  # Top Right
+                -6, -2, -30,       0, uv,  # Bottom Left
+                -6, 6, -30,        0, 0,   # Top Left
+                -18, -2, -30,      uv, uv,  # Bottom Right
+                -18, 6, -30,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_0010",
             "buffer_data": [
                 # Position         UV
-                4, -2, -28,       0, uv,  # Bottom Left
-                4, 6, -28,        0, 0,   # Top Left
-                12, -2, -28,      uv, uv,  # Bottom Right
-                12, 6, -28,       uv, 0,  # Top Right
+                6, -2, -42,       0, uv,  # Bottom Left
+                6, 6, -42,        0, 0,   # Top Left
+                18, -2, -42,      uv, uv,  # Bottom Right
+                18, 6, -42,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_0011",
             "buffer_data": [
                 # Position         UV
-                -4, -2, -28,       0, uv,  # Bottom Left
-                -4, 6, -28,        0, 0,   # Top Left
-                -12, -2, -28,      uv, uv,  # Bottom Right
-                -12, 6, -28,       uv, 0,  # Top Right
+                -6, -2, -42,       0, uv,  # Bottom Left
+                -6, 6, -42,        0, 0,   # Top Left
+                -18, -2, -42,      uv, uv,  # Bottom Right
+                -18, 6, -42,       uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_0012",
             "buffer_data": [
                 # Position         UV
-                4, -2, -28,       0, uv,  # Bottom Left
-                4, 6, -28,        0, 0,   # Top Left
-                -4, -2, -28,      uv, uv,  # Bottom Right
-                -4, 6, -28,       uv, 0,  # Top Right
+                6, -2, -42,       0, uv,  # Bottom Left
+                6, 6, -42,        0, 0,   # Top Left
+                -6, -2, -42,      uv, uv,  # Bottom Right
+                -6, 6, -42,       uv, 0,  # Top Right
             ],
         },
+        {
+            "name": "wall_0013",
+            "buffer_data": [
+                # Position         UV
+                30, -2, -42,       0, uv,  # Bottom Left
+                30, 6, -42,        0, 0,   # Top Left
+                18, -2, -42,      uv, uv,  # Bottom Right
+                18, 6, -42,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0014",
+            "buffer_data": [
+                # Position         UV
+                30, -2, -42,       0, uv,  # Bottom Left
+                30, 6, -42,        0, 0,   # Top Left
+                30, -2, -30,      uv, uv,  # Bottom Right
+                30, 6, -30,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0015",
+            "buffer_data": [
+                # Position         UV
+                30, -2, -30,       0, uv,  # Bottom Left
+                30, 6, -30,        0, 0,   # Top Left
+                42, -2, -30,      uv, uv,  # Bottom Right
+                42, 6, -30,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0016",
+            "buffer_data": [
+                # Position         UV
+                42, -2, -30,       0, uv,  # Bottom Left
+                42, 6, -30,        0, 0,   # Top Left
+                42, -2, -18,      uv, uv,  # Bottom Right
+                42, 6, -18,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0017",
+            "buffer_data": [
+                # Position         UV
+                42, -2, -6,       0, uv,  # Bottom Left
+                42, 6, -6,        0, 0,   # Top Left
+                42, -2, -18,      uv, uv,  # Bottom Right
+                42, 6, -18,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0018",
+            "buffer_data": [
+                # Position         UV
+                42, -2, 8,       0, uv,  # Bottom Left
+                42, 6, 8,        0, 0,   # Top Left
+                42, -2, -6,      uv, uv,  # Bottom Right
+                42, 6, -6,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0019",
+            "buffer_data": [
+                # Position         UV
+                18, -2, 8,       0, uv,  # Bottom Left
+                18, 6, 8,        0, 0,   # Top Left
+                6, -2, 8,        uv, uv,  # Bottom Right
+                6, 6, 8,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0020",
+            "buffer_data": [
+                # Position         UV
+                18, -2, 8,       0, uv,  # Bottom Left
+                18, 6, 8,        0, 0,   # Top Left
+                30, -2, 8,        uv, uv,  # Bottom Right
+                30, 6, 8,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0021",
+            "buffer_data": [
+                # Position         UV
+                30, -2, 8,       0, uv,  # Bottom Left
+                30, 6, 8,        0, 0,   # Top Left
+                42, -2, 8,        uv, uv,  # Bottom Right
+                42, 6, 8,         uv, 0,  # Top Right
+            ],
+        }
     ]
     return walls
 
 def get_doors(program):
     doors = [
         {
-            "name": "door_001",
+            "name": "red_door_001",
             "lock": True,
             "program": program,  # Use the passed program
-            "texture": 3,
+            "texture": 4,
             "opacity": .9,
             "buffer_data": [
                 # Position         UV
-                16, -2, -4,       0, 1,  # Bottom Left
-                16, 6, -4,        0, 0,   # Top Left
-                28, -2, -4,       1, 1,  # Bottom Right
-                28, 6, -4,        1, 0,   # Top Right
+                -18, -2, -42,       0, 1,  # Bottom Left
+                -18, 6, -42,        0, 0,   # Top Left
+                -18, -2, -30,       1, 1,  # Bottom Right
+                -18, 6, -30,        1, 0,  # Top Right
             ],
         }
     ]
-    return []
     return doors
 
 def get_enemy_walls():

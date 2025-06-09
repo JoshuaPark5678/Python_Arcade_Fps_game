@@ -11,6 +11,7 @@ import time
 
 import raycast
 
+
 class Enemy():
     def __init__(self, player, walls, enemy_walls, position=Vec3(0, 0, 0), health=100, rotation=Vec3(0, 0, 0)):
         self.is_alive = True
@@ -30,6 +31,8 @@ class Enemy():
         self.last_attack_time = time.time()  # Time when the last attack occurred
         self.pre_attack_timer = 0.0  # Timer for pre-attack animation
         self.is_attacking = False
+        
+        self.radius = 1.0  # Radius for collision detection
 
         self.walls = []
         for wall in walls:
@@ -41,7 +44,7 @@ class Enemy():
 
         self.proximity_radius = 40.0  # Distance within which the enemy will detect the player
 
-    def move(self, player_position):
+    def move(self, player_position, all_enemies):
         distance_to_player = math.sqrt(
             (self.position.x - player_position.x) ** 2 +
             (self.position.y - player_position.y) ** 2 +
@@ -52,7 +55,19 @@ class Enemy():
             # Move toward player
             forward = Vec3(
                 math.sin(self.rotation.y), 0, math.cos(self.rotation.y)).scale(self.speed)
-            self.position += forward
+            new_position = self.position + forward
+
+            # Check collision with other enemies
+            for other in all_enemies:
+                if other["object"] is self or other["object"].is_dead():
+                    continue
+                distance = (new_position - other["object"].position).mag
+                if distance < self.radius * 2:  # or self.radius + other.radius
+                    # Collision detected, don't move
+                    return
+
+            # If no collision, update position
+            self.position = new_position
             self.is_attacking = False
             self.pre_attack_timer = 0.0
         elif distance_to_player <= 3.0 and self.is_player_in_sight(player_position):
@@ -93,8 +108,9 @@ class Enemy():
             (self.position.z - player_position.z) ** 2
         )
 
-        result, _ = raycast.raycast(ray_start, ray_direction, self.walls, ray_length=distance_to_player)
-        
+        result, _ = raycast.raycast(
+            ray_start, ray_direction, self.walls, ray_length=distance_to_player)
+
         return not result
 
     def attack_player(self, player_position):

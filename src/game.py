@@ -26,6 +26,7 @@ import raycast
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
+
 class Player:
     def __init__(self):
         self.health = 5  # Player's health
@@ -53,7 +54,7 @@ class Game(arcade.Window):
 
         self.icon = pyglet.image.load(f"{self.file_dir}/texture/cat1.jpg")
         arcade.get_window().set_icon(self.icon)
-        
+
         self.levels = [
             level1,
             level2
@@ -61,7 +62,7 @@ class Game(arcade.Window):
 
         # debug variable
         self.debugVal = 0
-        self.debugMode = False  # Debug mode flag
+        self.debugMode = True  # Debug mode flag
 
         # SCREEN DIMENSIONS
         self.screen_width = SCREEN_WIDTH
@@ -316,7 +317,7 @@ class Game(arcade.Window):
         self.fov = 90  # Field of view
 
         self.is_paused = False  # Flag to track if the game is paused
-        
+
         # set up the player
         self.player = Player()  # Create a player instance
 
@@ -384,10 +385,10 @@ class Game(arcade.Window):
         self.wall = self.plane  # Use the same shader for walls
 
         self.enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
-                       f"{self.file_dir}/models/crazy_boy_test.bin"]
-        
+                            f"{self.file_dir}/models/crazy_boy_test.bin"]
+
         self.load_level(1)  # Load the first level
-        
+
         # Movement flags
         self.movement = {
             "forward": False,
@@ -439,8 +440,12 @@ class Game(arcade.Window):
         self.revolver_in_reload = False  # Flag to control reload animation
         self.revolver_reload_frame = 0  # Frame index for the reload animation
 
+        self.hitmarker_timer = 0  # Timer for the hitmarker
+        self.HS_hitmarker = False  # Flag for headshot hitmarker
+        self.hitmarker = False  # Flag for hitmarker
+
         self.isLoaded = False  # Flag to check if the textures are loaded
-        
+
         threading.Thread(target=self.setup_revolver_textures,
                          daemon=True).start()
 
@@ -534,7 +539,8 @@ class Game(arcade.Window):
                 self.exit_portal["program"]["time"] = self.time * 2
                 self.exit_portal["program"]["projection"] = self.proj
                 self.exit_portal["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z
-                self.exit_portal["geometry"].render(self.exit_portal["program"])
+                self.exit_portal["geometry"].render(
+                    self.exit_portal["program"])
             elif obj["id"] == 4:
                 # Render projectiles
                 obj["program"]["projection"] = self.proj
@@ -666,6 +672,46 @@ class Game(arcade.Window):
                 center_x, center_y + crosshair_size,
                 inverse_color, line_thickness
             )
+
+            # HITMARKER
+            if self.HS_hitmarker:
+                # Draw hitmarker at the center of the screen
+                hitmarker_size = 8
+                hitmarker_thickness = 2
+                offset = 3  # Offset for the hitmarker lines
+                color = arcade.color.RED  # Color of the hitmarker
+            elif self.hitmarker:
+                # Draw hitmarker at the center of the screen
+                hitmarker_size = 5
+                hitmarker_thickness = 2
+                offset = 3  # Offset for the hitmarker lines
+                color = arcade.color.GRAY  # Color of the hitmarker
+            if self.HS_hitmarker or self.hitmarker:
+                # FOUR LINES FOR HITMARKER
+                # Top left
+                arcade.draw_line(
+                    center_x - hitmarker_size - offset, center_y + hitmarker_size + offset,
+                    center_x - offset, center_y + offset,
+                    color, hitmarker_thickness
+                )
+                # Bottom left
+                arcade.draw_line(
+                    center_x - hitmarker_size - offset, center_y - hitmarker_size - offset,
+                    center_x - offset, center_y - offset,
+                    color, hitmarker_thickness
+                )
+                # Bottom right
+                arcade.draw_line(
+                    center_x + hitmarker_size + offset, center_y - hitmarker_size - offset,
+                    center_x + offset, center_y - offset,
+                    color, hitmarker_thickness
+                )
+                # Top right
+                arcade.draw_line(
+                    center_x + hitmarker_size + offset, center_y + hitmarker_size + offset,
+                    center_x + offset, center_y + offset,
+                    color, hitmarker_thickness
+                )
             # ========================INFO========================== #
             # display health bar
             arcade.draw_ellipse_filled(
@@ -817,11 +863,11 @@ class Game(arcade.Window):
         # set mouse active
         self.set_mouse_visible(not self.mouse_locked)
         self.set_exclusive_mouse(self.mouse_locked)
-        
+
         enemy_count = 0  # Count the number of enemies
         for obj in self.objects:
             if obj["id"] == 10:
-                obj["object"].move(-self.camera_pos)
+                obj["object"].move(-self.camera_pos, self.enemies)
                 if obj["object"].is_dead():
                     self.objects.remove(obj)
                 else:
@@ -833,6 +879,15 @@ class Game(arcade.Window):
                     # Unlock the door if all enemies are defeated
                     door["lock"] = False
                     door["opacity"] = 0.5  # Update opacity based on lock state
+
+        if self.HS_hitmarker:
+            if self.hitmarker_timer <= self.time:
+                self.HS_hitmarker = False
+                self.hitmarker_timer = 0  # Reset the hitmarker timer
+        elif self.hitmarker:
+            if self.hitmarker_timer <= self.time:
+                self.hitmarker = False
+                self.hitmarker_timer = 0  # Reset the hitmarker timer
 
         # Update the revolver animation frame
         if self.is_ADS:
@@ -931,7 +986,7 @@ class Game(arcade.Window):
                     self.current_frame = 0
                     self.cylinder_spin = 0
                     self.weapon_anim_running = False  # Stop the animation after one cycle
-        
+
         for obj in self.objects:
             if obj["id"] == 4:
                 # Update the projectile's position based on its velocity
@@ -1352,9 +1407,13 @@ class Game(arcade.Window):
                                 raycast_result["object"].apply_damage(
                                     20)  # Apply 20 damage for headshot
                                 print("Headshot!")
+                                self.HS_hitmarker = True
+                                self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
                             else:
                                 raycast_result["object"].apply_damage(
                                     10)  # Apply 10 damage if no headshot
+                                self.hitmarker = True
+                                self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
             else:
                 self.revolver_in_reload = True
 
@@ -1508,7 +1567,7 @@ class Game(arcade.Window):
             )
 
         return distance
-        
+
     def load_level(self, level):
         self.isLoaded = False
         # Load the level data from a file or other source
@@ -1553,7 +1612,8 @@ class Game(arcade.Window):
         self.objects.append(self.exit_portal)
 
         # Initialize the enemy list
-        self.enemies = self.levels[level - 1].get_Enemies(self.player, self.GLTF_program)
+        self.enemies = self.levels[level -
+                                   1].get_Enemies(self.player, self.GLTF_program)
 
         self.enemy1_gltf = GLTF2().load(self.enemy1_path[0])
 
@@ -1565,7 +1625,7 @@ class Game(arcade.Window):
             self.objects.append(enemy)
             enemy["geometry"] = gltf_utils.load_gltf(
                 self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
-            
+
         self.isLoaded = True
 
     def exit_level(self):

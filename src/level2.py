@@ -266,20 +266,33 @@ def get_Enemies(player, program):
     enemies = [
         {
             "name": "enemy1_001",
-            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -30), 100, Vec3(0, 0, 0)),
+            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(18, -2, -6), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "rotation": Vec3(0, 0, 0),
         },
         {
             "name": "enemy1_002",
-            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -20), 100, Vec3(0, 0, 0)),
+            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(30, -2, -6), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy1_003",
+            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(14, -2, -4), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy1_004",
+            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(34, -2, -4), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "rotation": Vec3(0, 0, 0),
         }
     ]
-    return []
     return enemies
 
 def get_exit():

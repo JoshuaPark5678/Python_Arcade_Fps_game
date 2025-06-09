@@ -27,7 +27,7 @@ class Enemy():
         self.attack_damage = 1
         self.attack_range = 3.0
         self.attack_cooldown = 2  # Time between attacks in milliseconds
-        self.pre_attack_time = 0.3  # Time before attack in seconds
+        self.pre_attack_time = 0.2  # Time before attack in seconds
         self.last_attack_time = time.time()  # Time when the last attack occurred
         self.pre_attack_timer = 0.0  # Timer for pre-attack animation
         self.is_attacking = False

@@ -19,7 +19,7 @@ class Enemy():
         self.player = player
         self.position = position
         self.return_position = position
-        self.speed = 0.1
+        self.speed = 0.2
 
         self.health = health
         self.rotation = rotation
@@ -84,7 +84,7 @@ class Enemy():
                     self.is_attacking = False
         else:
             # Return to original position
-            if self.position != self.return_position:
+            if self.position != self.return_position and self.return_is_in_sight():
                 direction_to_return = Vec3(
                     self.return_position.x - self.position.x,
                     self.return_position.y - self.position.y,
@@ -115,6 +115,24 @@ class Enemy():
 
         return not result
 
+    def return_is_in_sight(self):
+        # raytrace from enemy to return position 
+        ray_start = Vec3(self.position.x, self.position.y + 1, self.position.z)
+        ray_end = self.return_position
+        ray_direction = Vec3(
+            ray_end.x - ray_start.x,
+            ray_end.y - ray_start.y,
+            ray_end.z - ray_start.z
+        ).normalize()
+        distance_to_return = math.sqrt(
+            (self.position.x - self.return_position.x) ** 2 +
+            (self.position.y - self.return_position.y) ** 2 +
+            (self.position.z - self.return_position.z) ** 2
+        )
+        result, _ = raycast.raycast(
+            ray_start, ray_direction, self.walls, ray_length=distance_to_return)
+        return not result
+    
     def attack_player(self, player_position):
         # Implement your attack logic here
         print("Attacking player at:", player_position)

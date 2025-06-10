@@ -383,6 +383,12 @@ def get_Enemies(player, program):
     ]
     return enemies
 
+
+def get_buttons(program):
+    buttons = [
+    ]
+    return buttons
+
 def get_exit():
     exit = {
         "name": "exit_001",

@@ -295,9 +295,25 @@ def get_Enemies(player, program):
     ]
     return enemies
 
+def get_buttons(program):
+    buttons = [
+        {
+            "name": "button_001",
+            "id": 20,
+            "program": program,
+            "position": Vec3(24, -2, 0),
+            "rotation": Vec3(0, 0, 0),
+            "action": "open_door",
+            "target": "red_door_001"
+        }
+    ]
+    return buttons
+
 def get_exit():
     exit = {
         "name": "exit_001",
         "model": Vec3(10, 1, 2),
     }
     return exit
+
+

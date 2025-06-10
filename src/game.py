@@ -387,6 +387,9 @@ class Game(arcade.Window):
         self.enemy1_path = [f"{self.file_dir}/models/crazy_boy_test.gltf",
                             f"{self.file_dir}/models/crazy_boy_test.bin"]
 
+        self.button_path = [f"{self.file_dir}/models/button.gltf",
+                            f"{self.file_dir}/models/button.bin"]
+
         self.load_level(1)  # Load the first level
 
         # Movement flags
@@ -443,6 +446,8 @@ class Game(arcade.Window):
         self.hitmarker_timer = 0  # Timer for the hitmarker
         self.HS_hitmarker = False  # Flag for headshot hitmarker
         self.hitmarker = False  # Flag for hitmarker
+
+        self.interactions = []  # List to store interactions with objects
 
         self.isLoaded = False  # Flag to check if the textures are loaded
 
@@ -573,6 +578,30 @@ class Game(arcade.Window):
 
                     # Render the geometry
                     enemy_geometry["geometry"].render(obj["program"])
+
+            elif obj["id"] == 20:  # Render buttons (general GLTF objects)
+                # Bind the GLTF program
+                obj["program"]["projection"] = self.proj
+
+                # Rotate the object around the Y-axis
+                object_rotation_matrix = (Mat4.from_rotation(
+                    obj["rotation"].y, (0, 1, 0)) - Mat4.from_translation(Vec3(0, 0, 0)))  # Rotate around Y-axis
+
+                translation = (Mat4.from_translation(
+                    self.camera_pos) @ Mat4.from_translation(obj["position"]))  # Get the world position of the object
+
+                # Final model matrix
+                obj["program"]["model"] = (
+                    # Apply camera rotation
+                    (translation + object_rotation_matrix)
+                    @ (rotate_y @ rotate_x @ rotate_z))
+
+                for i, button_geometry in enumerate(obj["geometry"]):
+                    # Set material properties
+                    obj["program"]["base_color_factor"] = button_geometry["base_color_factor"]
+
+                    # Render the geometry
+                    button_geometry["geometry"].render(obj["program"])
 
         for ray_start, ray_end, color, timestamp in self.debug_rays:
 
@@ -712,6 +741,21 @@ class Game(arcade.Window):
                     center_x + offset, center_y + offset,
                     color, hitmarker_thickness
                 )
+
+            # ======================INTERACTIONS========================== #
+            if len(self.interactions) > 0:
+                # draw a transparent square in the center of the screen
+                arcade.draw_xywh_rectangle_filled(
+                    self.screen_width // 2 - 100,  # x
+                    self.screen_height // 2 - 100,  # y
+                    200,                          # width
+                    50,                          # height
+                    # RGBA: black, 100/255 alpha (semi-transparent)
+                    (0, 0, 0, 100)
+                )
+                arcade.draw_text("Press E to interact", self.screen_width // 2, self.screen_height // 2 - 75,
+                                 arcade.color.WHITE, 10, font_name="Kenney Future", anchor_x="center", anchor_y="center", bold=True)
+
             # ========================INFO========================== #
             # display health bar
             arcade.draw_ellipse_filled(
@@ -879,6 +923,21 @@ class Game(arcade.Window):
                     # Unlock the door if all enemies are defeated
                     door["lock"] = False
                     door["opacity"] = 0.5  # Update opacity based on lock state
+
+        # if close to a button, add it to the interactions list
+        for obj in self.objects:
+            if obj["id"] == 20:
+                distance = math.sqrt(
+                    (obj["position"].x + self.camera_pos.x) ** 2 +
+                    (obj["position"].y + self.camera_pos.y) ** 2 +
+                    (obj["position"].z + self.camera_pos.z) ** 2
+                )
+                if distance < 3 and not obj in self.interactions:  # Adjust the distance threshold as needed
+                    # Add the button to the interactions list
+                    self.interactions.append(obj)
+                elif distance >= 3 and obj in self.interactions:
+                    # Remove the button from the interactions list if too far
+                    self.interactions.remove(obj)
 
         if self.HS_hitmarker:
             if self.hitmarker_timer <= self.time:
@@ -1565,6 +1624,14 @@ class Game(arcade.Window):
                 (self.camera_pos.y + enemy1_position.y) ** 2 +
                 (self.camera_pos.z + enemy1_position.z) ** 2
             )
+        elif object["id"] == 20:
+            # buttons have only one vertex (x, y, z)
+            button_position = object["position"]
+            distance = math.sqrt(
+                (self.camera_pos.x + button_position.x) ** 2 +
+                (self.camera_pos.y + button_position.y) ** 2 +
+                (self.camera_pos.z + button_position.z) ** 2
+            )
 
         return distance
 
@@ -1625,6 +1692,19 @@ class Game(arcade.Window):
             self.objects.append(enemy)
             enemy["geometry"] = gltf_utils.load_gltf(
                 self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.2, 0.2, 0.2))
+
+        # get buttons
+        self.buttons = self.levels[level - 1].get_buttons(self.GLTF_program)
+
+        self.button_gltf = GLTF2().load(self.button_path[0])
+
+        with open(self.button_path[1], "rb") as f:
+            self.button_bin_data = f.read()
+
+        for button in self.buttons:
+            self.objects.append(button)
+            button["geometry"] = gltf_utils.load_gltf(
+                self, self.button_gltf, self.button_bin_data, scale=Vec3(0.3, 0.16, 0.3))
 
         self.isLoaded = True
 

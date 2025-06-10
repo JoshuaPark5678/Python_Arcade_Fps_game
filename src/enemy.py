@@ -26,6 +26,7 @@ class Enemy():
 
         self.attack_damage = 1
         self.attack_range = 3.0
+        self.agro = False
         self.attack_cooldown = 2  # Time between attacks in milliseconds
         self.pre_attack_time = 0.2  # Time before attack in seconds
         self.last_attack_time = time.time()  # Time when the last attack occurred
@@ -51,7 +52,7 @@ class Enemy():
             (self.position.z - player_position.z) ** 2
         )
 
-        if distance_to_player < self.proximity_radius and distance_to_player > 3.0 and self.is_player_in_sight(player_position):
+        if (distance_to_player < self.proximity_radius or self.agro) and distance_to_player > 3.0 and self.is_player_in_sight(player_position):
             # Move toward player
             forward = Vec3(
                 math.sin(self.rotation.y), 0, math.cos(self.rotation.y)).scale(self.speed)
@@ -92,6 +93,7 @@ class Enemy():
                 self.position += direction_to_return.scale(self.speed)
             self.is_attacking = False
             self.pre_attack_timer = 0.0
+            self.agro = False
 
     def is_player_in_sight(self, player_position):
         # Check if raycast from enemy to player intersects with any walls
@@ -133,6 +135,7 @@ class Enemy():
         return self.rotation
 
     def apply_damage(self, damage):
+        self.agro = True
         self.health -= damage
         if self.health <= 0:
             self.die()

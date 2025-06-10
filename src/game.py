@@ -1231,7 +1231,7 @@ class Game(arcade.Window):
         self.camera_pos += self.movement_vector
 
         # Apply gravity
-        gravity = 0.02  # Gravity strength
+        gravity = 0.01  # Gravity strength
         if not self.is_on_ground:
             self.vertical_velocity += gravity  # Apply gravity to vertical velocity
             self.camera_pos.y += self.vertical_velocity  # Update camera's Y position
@@ -1279,7 +1279,7 @@ class Game(arcade.Window):
             if self.is_on_ground or self.camera_pos.y > -1:  # Only allow jumping if on the ground
                 print("Jumping!")
                 self.is_on_ground = False  # Set the flag to false when jumping
-                self.vertical_velocity = -0.3  # Set jump power
+                self.vertical_velocity = -0.2  # Set jump power
         elif key == arcade.key.ESCAPE:
             self.mouse_locked = not self.mouse_locked
             self.set_mouse_visible(not self.mouse_locked)

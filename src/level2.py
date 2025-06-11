@@ -218,7 +218,27 @@ def get_walls():
                 42, -2, 8,        uv, uv,  # Bottom Right
                 42, 6, 8,         uv, 0,  # Top Right
             ],
-        }
+        },
+        {
+            "name": "wall_0022",
+            "buffer_data": [
+                # Position         UV
+                -18, -2, -42,       0, uv,  # Bottom Left
+                -18, 6, -42,        0, 0,   # Top Left
+                -30, -2, -42,      uv, uv,  # Bottom Right
+                -30, 6, -42,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0023",
+            "buffer_data": [
+                # Position         UV
+                -30, -2, -30,       0, uv,  # Bottom Left
+                -30, 6, -30,        0, 0,   # Top Left
+                -30, -2, -42,      uv, uv,  # Bottom Right
+                -30, 6, -42,       uv, 0,  # Top Right
+            ],
+        },
     ]
     return walls
 
@@ -303,6 +323,7 @@ def get_buttons(program):
             "program": program,
             "position": Vec3(24, -2, 0),
             "rotation": Vec3(0, 0, 0),
+            "active": True,
             "action": "open_door",
             "target": "red_door_001"
         }

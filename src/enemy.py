@@ -22,6 +22,8 @@ class Enemy():
         self.speed = 0.2
 
         self.health = health
+        self.max_health = health
+        
         self.rotation = rotation
 
         self.attack_damage = 1
@@ -148,6 +150,9 @@ class Enemy():
 
     def get_health(self):
         return self.health
+    
+    def get_max_health(self):
+        return self.max_health
 
     def get_rotation(self):
         return self.rotation

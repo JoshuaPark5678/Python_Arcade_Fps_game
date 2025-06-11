@@ -98,15 +98,11 @@ class Game(arcade.Window):
                 """,
                 fragment_shader="""
                 #version 330
-
-                uniform vec4 base_color_factor;  // Base color (RGBA)
-
+                uniform vec4 base_color_factor;     // Base color (RGBA)
                 out vec4 fragColor;
 
                 void main() {
-                    vec4 base_color = base_color_factor;
-
-                    fragColor = base_color;  // Output the final color
+                    fragColor = base_color_factor;  // Set the fragment color
                 }
                 """
             )
@@ -328,31 +324,24 @@ class Game(arcade.Window):
         # Set up the model matrix for the ground
         self.plane["projection"] = self.proj
 
-        # Ground geometry
-        ground_buffer = self.ctx.buffer(
-            data=array(
+        ground_ceiling_buffer_array = array(
                 'f',
                 [
                     # Position         UV
-                    -60, -2, 60,       0, 60,  # Top Left
-                    -60, -2, -60,      0, 0,   # Bottom Left
-                    60, -2, 60,        60, 60,  # Top Right
-                    60, -2, -60,       60, 0,  # Bottom Right
+                    -100, -2, 50,       0, 100,  # Top Left
+                    -100, -2, -150,      0, 0,   # Bottom Left
+                    100, -2, 50,        100, 100,  # Top Right
+                    100, -2, -150,       100, 0,  # Bottom Right
                 ]
             )
+        
+        # Ground geometry
+        ground_buffer = self.ctx.buffer(
+            data=ground_ceiling_buffer_array
         )
 
         ceiling_buffer = self.ctx.buffer(
-            data=array(
-                'f',
-                [
-                    # Position         UV
-                    -60, 6, 60,       0, 60,  # Top Left
-                    -60, 6, -60,      0, 0,   # Bottom Left
-                    60, 6, 60,        60, 60,  # Top Right
-                    60, 6, -60,       60, 0,  # Bottom Right
-                ]
-            )
+            data=ground_ceiling_buffer_array
         )
 
         # Create the ground geometry
@@ -426,6 +415,10 @@ class Game(arcade.Window):
         self.shake_decay = 0.9  # How quickly the shake effect decays
         # Direction of the shake (-1 for left, 1 for right)
         self.shake_direction = 0
+        
+        # weapons
+        self.arsenal = ["REVOLVER"]  # List to store weapons
+
         # revolver animation
         self.revolver_textures = []  # List to store all textures for the animation
         self.revolver_ADS_textures = []  # List to store all textures for the ADS animation
@@ -574,6 +567,14 @@ class Game(arcade.Window):
                 for i, enemy_geometry in enumerate(obj["geometry"]):
 
                     # Set material properties
+                    if i == 2:
+                        # change the color of the enemy
+                        h_factor = obj["object"].get_health() / obj["object"].get_max_health()  # Health factor for color
+                        base_color = enemy_geometry["base_color_factor"]
+
+                        enemy_geometry["base_color_factor"] = (base_color[0] * h_factor,
+                            base_color[1] * h_factor, base_color[2] * h_factor, 0.7 * h_factor + 0.3)
+
                     obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
 
                     # Render the geometry
@@ -741,6 +742,8 @@ class Game(arcade.Window):
                     center_x + offset, center_y + offset,
                     color, hitmarker_thickness
                 )
+            
+            # WEAPON SELECTION
 
             # ======================INTERACTIONS========================== #
             if len(self.interactions) > 0:
@@ -932,11 +935,9 @@ class Game(arcade.Window):
                     (obj["position"].y + self.camera_pos.y) ** 2 +
                     (obj["position"].z + self.camera_pos.z) ** 2
                 )
-                if distance < 3 and not obj in self.interactions:  # Adjust the distance threshold as needed
-                    # Add the button to the interactions list
+                if distance < 3 and obj not in self.interactions and obj["active"]:
                     self.interactions.append(obj)
                 elif distance >= 3 and obj in self.interactions:
-                    # Remove the button from the interactions list if too far
                     self.interactions.remove(obj)
 
         if self.HS_hitmarker:
@@ -1374,15 +1375,25 @@ class Game(arcade.Window):
                       rays[1], "Color:", rays[2])
 
         elif key == arcade.key.E:
-            # move the enemy object forward
-            for obj in self.objects:
-                if obj["id"] == 10:
-                    # Move the enemy object forward according to its rotation
-                    rotation = obj["object"].get_rotation()
-                    forward = Vec3(
-                        math.sin(rotation.y), 0, math.cos(rotation.y))
-                    # Move forward by 0.1 units
-                    obj["object"].move(forward.scale(0.1))
+            # Interact with the closest button if available
+            if self.interactions:
+                # Find the closest button
+                closest_button = min(
+                    self.interactions,
+                    key=lambda obj: math.sqrt(
+                        (obj["position"].x + self.camera_pos.x) ** 2 +
+                        (obj["position"].y + self.camera_pos.y) ** 2 +
+                        (obj["position"].z + self.camera_pos.z) ** 2
+                    )
+                )
+                if closest_button["action"] == "open_door":
+                    # Open the door if the button is pressed
+                    for door in self.doors:
+                        if door["name"] == closest_button["target"]:
+                            if door["lock"]:
+                                closest_button["active"] = False  # Deactivate the button
+                                door["lock"] = False  # Unlock the door
+                                door["opacity"] = 0.5  # Update opacity based on lock state
 
         elif key == arcade.key.Q:
             pass
@@ -1473,6 +1484,8 @@ class Game(arcade.Window):
                                     10)  # Apply 10 damage if no headshot
                                 self.hitmarker = True
                                 self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
+                        elif raycast_result["id"] == 1 and self.debugMode:
+                            print(f"Hit wall {raycast_result['name']}!")
             else:
                 self.revolver_in_reload = True
 

@@ -748,10 +748,12 @@ class Game(arcade.Window):
                     current_texture = self.shotgun_textures[self.shotgun_current_frame]
                 else:
                     current_texture = self.shotgun_textures[0]  # Idle frame
-
+    
                 arcade.draw_texture_rectangle(
-                    self.screen_width // 2,
-                    self.screen_height // 2 - 60,
+                    (self.screen_width // 2) + math.sin(
+                        time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 200,
+                    (self.screen_height // 2 - 60) + math.sin(
+                        time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 100,
                     self.screen_width,
                     self.screen_height + 20,
                     current_texture

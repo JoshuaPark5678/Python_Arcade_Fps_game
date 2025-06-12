@@ -233,10 +233,60 @@ def get_walls():
             "name": "wall_0023",
             "buffer_data": [
                 # Position         UV
-                -30, -2, -30,       0, uv,  # Bottom Left
-                -30, 6, -30,        0, 0,   # Top Left
-                -30, -2, -42,      uv, uv,  # Bottom Right
-                -30, 6, -42,       uv, 0,  # Top Right
+                -42, -2, -30,       0, uv,  # Bottom Left
+                -42, 6, -30,        0, 0,   # Top Left
+                -42, -2, -42,      uv, uv,  # Bottom Right
+                -42, 6, -42,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0024",
+            "buffer_data": [
+                # Position         UV
+                -42, -2, -30,       0, uv,  # Bottom Left
+                -42, 6, -30,        0, 0,   # Top Left
+                -42, -2, -18,      uv, uv,  # Bottom Right
+                -42, 6, -18,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0025",
+            "buffer_data": [
+                # Position         UV
+                -42, -2, -18,       0, uv,  # Bottom Left
+                -42, 6, -18,        0, 0,   # Top Left
+                -42, -2, -6,      uv, uv,  # Bottom Right
+                -42, 6, -6,       uv, 0,  # Top Right
+            ],
+        },
+        {            
+            "name": "wall_0027",
+            "buffer_data": [
+                # Position         UV
+                -42, -2, -6,       0, uv,  # Bottom Left
+                -42, 6, -6,        0, 0,   # Top Left
+                -30, -2, -6,      uv, uv,  # Bottom Right
+                -30, 6, -6,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0028",
+            "buffer_data": [
+                # Position         UV
+                -30, -2, -6,       0, uv,  # Bottom Left
+                -30, 6, -6,        0, 0,   # Top Left
+                -18, -2, -6,      uv, uv,  # Bottom Right
+                -18, 6, -6,       uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_0029",
+            "buffer_data": [
+                # Position         UV
+                -18, -2, -6,       0, uv,  # Bottom Left
+                -18, 6, -6,        0, 0,   # Top Left
+                -6, -2, -6,      uv, uv,  # Bottom Right
+                -6, 6, -6,       uv, 0   # Top Right
             ],
         },
     ]
@@ -256,6 +306,20 @@ def get_doors(program):
                 -18, 6, -42,        0, 0,   # Top Left
                 -18, -2, -30,       1, 1,  # Bottom Right
                 -18, 6, -30,        1, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "green_door_001",
+            "lock": True,
+            "program": program,  # Use the passed program
+            "texture": 3,
+            "opacity": .9,
+            "buffer_data": [
+                # Position         UV
+                -42, -2, -42,       0, 1,  # Bottom Left
+                -42, 6, -42,        0, 0,   # Top Left
+                -30, -2, -42,       1, 1,  # Bottom Right
+                -30, 6, -42,        1, 0,  # Top Right
             ],
         }
     ]

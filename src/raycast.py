@@ -114,7 +114,7 @@ def raycast(ray_start, ray_direction, objects, ray_length=100):
 
         if obj["id"] == 10:
             # gltf model
-            body = obj["geometry"][2]
+            body = obj["geometry"][0]
             positions = body["positions"]  # Use the mesh's vertex positions
             indices = body["indices"] if "indices" in body else None
             if indices:

@@ -20,6 +20,9 @@ class Enemy():
         self.position = position
         self.return_position = position
         self.speed = 0.2
+        self.normal_speed = 0.2  # Store normal speed
+        self.slow_speed = 0.1   # Slowed speed
+        self.slow_until = 0      # Time until which enemy is slowed
 
         self.health = health
         self.max_health = health
@@ -48,6 +51,10 @@ class Enemy():
         self.proximity_radius = 40.0  # Distance within which the enemy will detect the player
 
     def move(self, player_position, all_enemies):
+        # Restore speed if slow duration is over
+        if time.time() > self.slow_until and self.speed != self.normal_speed:
+            self.speed = self.normal_speed
+
         distance_to_player = math.sqrt(
             (self.position.x - player_position.x) ** 2 +
             (self.position.y - player_position.y) ** 2 +
@@ -160,6 +167,9 @@ class Enemy():
     def apply_damage(self, damage):
         self.agro = True
         self.health -= damage
+        # Slow the enemy for 1 second when damaged
+        self.speed = self.slow_speed
+        self.slow_until = time.time() + 1.0  # Slow for 1 second
         if self.health <= 0:
             self.die()
 

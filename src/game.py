@@ -21,6 +21,7 @@ import level2
 # ----- UTILS ----- #
 import gltf_utils
 import raycast
+import weapons
 
 # Constants for screen dimensions
 SCREEN_WIDTH = 1280
@@ -258,67 +259,6 @@ class Game(arcade.Window):
         self.texture3.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture4.filter = self.ctx.NEAREST, self.ctx.NEAREST
 
-    def setup_revolver_textures(self):
-        start = time.time()
-        self.currentLoading = 0
-        self.totalLoading = len(os.listdir(f"{self.file_dir}/model_ui/revolver/shoot/")) + \
-            len(os.listdir(f"{self.file_dir}/model_ui/revolver/ADS_shoot/")) + \
-            len(os.listdir(f"{self.file_dir}/model_ui/revolver/ADS_transition/")) + \
-            len(os.listdir(f"{self.file_dir}/model_ui/revolver/Reload/")) + \
-            len(os.listdir(f"{self.file_dir}/model_ui/shotgun/shoot/")) 
-
-        # if debug mode is enabled, load only one frame of each animation
-        if self.debugMode:
-            self.revolver_textures = [arcade.load_texture(
-                f"{self.file_dir}/model_ui/revolver/shoot/0001.png")]
-            self.revolver_ADS_textures = [arcade.load_texture(
-                f"{self.file_dir}/model_ui/revolver/ADS_shoot/0001.png")]
-            self.revolver_ADS_transition_textures = [arcade.load_texture(
-                f"{self.file_dir}/model_ui/revolver/ADS_transition/0001.png")]
-            self.revolver_reload_textures = [arcade.load_texture(
-                f"{self.file_dir}/model_ui/revolver/Reload/0001.png")]
-            self.shotgun_textures = [arcade.load_texture(
-                f"{self.file_dir}/model_ui/shotgun/shoot/0001.png")]
-            self.isLoaded = True  # Set flag when done
-            return
-
-        # REVOLVER TEXTURES
-        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
-            texture_path = f"{self.file_dir}/model_ui/revolver/shoot/{i:04d}.png"
-            self.revolver_textures.append(arcade.load_texture(texture_path))
-            self.currentLoading += 1
-
-        for i in range(1, 17):  # Assuming the images are named 0001.png to 0016.png
-            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_shoot/{i:04d}.png"
-            self.revolver_ADS_textures.append(
-                arcade.load_texture(texture_path))
-            self.currentLoading += 1
-
-        for i in range(1, 9):  # Assuming the images are named 0001.png to 0008.png
-            texture_path = f"{self.file_dir}/model_ui/revolver/ADS_transition/{i:04d}.png"
-            self.revolver_ADS_transition_textures.append(
-                arcade.load_texture(texture_path))
-            self.currentLoading += 1
-
-        for i in range(1, 73):
-            texture_path = f"{self.file_dir}/model_ui/revolver/Reload/{i:04d}.png"
-            self.revolver_reload_textures.append(
-                arcade.load_texture(texture_path))
-            self.currentLoading += 1
-        
-        print("Revolver textures loaded")
-        
-        # SHOTGUN TEXTURES
-        for i in range(1, 27):  # Assuming the images are named 0001.png to 0026.png
-            texture_path = f"{self.file_dir}/model_ui/shotgun/shoot/{i:04d}.png"
-            self.shotgun_textures.append(arcade.load_texture(texture_path))
-            self.currentLoading += 1
-
-        print("Shotgun textures loaded")
-
-        print("Textures loaded in", time.time() - start, "seconds")
-
-        self.isLoaded = True  # Set flag when done
         
     def setup(self):
         # Set the background color
@@ -441,9 +381,8 @@ class Game(arcade.Window):
         self.shake_decay = 0.9  # How quickly the shake effect decays
         # Direction of the shake (-1 for left, 1 for right)
         self.shake_direction = 0
-        
-        # weapons
-        self.arsenal = ["REVOLVER", "SHOTGUN"]  # List to store weapons
+
+        self.weapon_manager = weapons.WeaponManager(self)
         
         self.revolver_icon = arcade.load_texture(
             f"{self.file_dir}/model_ui/arsenal_icons/revolver_icon.png")
@@ -453,34 +392,6 @@ class Game(arcade.Window):
         
         self.revolver_icon.filter = pyglet.gl.GL_NEAREST, pyglet.gl.GL_NEAREST
         self.shotgun_icon.filter = pyglet.gl.GL_NEAREST, pyglet.gl.GL_NEAREST
-
-        # revolver setup
-        self.needs_texture_warmup = True
-        
-        # revolver animation
-        self.revolver_textures = []  # List to store all textures for the animation
-        self.revolver_ADS_textures = []  # List to store all textures for the ADS animation
-        # List to store all textures for the ADS transition animation
-        self.revolver_ADS_transition_textures = []
-        # List to store all textures for the reload animation
-        self.revolver_reload_textures = []
-        
-        # shotgun animation
-        self.shotgun_textures = []  # List to store all textures for the shotgun animation
-        
-        self.shotgun_anim_running = False
-        self.shotgun_current_frame = 0
-        self.shotgun_animation_speed = 0.1  # Adjust as needed
-        self.shotgun_time_since_last_frame = 0
-
-        self.revolver_current_frame = 0  # Current frame index
-        self.animation_speed = 0.1  # Time (in seconds) between frames
-        self.revolver_time_since_last_frame = 0  # Time accumulator for frame updates
-        self.revolver_weapon_anim_running = False  # Flag to control animation
-        self.revolver_in_transition = False  # Flag to control transition animation
-        self.revolver_transition_frame = 0  # Frame index for the transition animation
-        self.revolver_in_reload = False  # Flag to control reload animation
-        self.revolver_reload_frame = 0  # Frame index for the reload animation
 
         self.hitmarker_timer = 0  # Timer for the hitmarker
         self.HS_hitmarker = False  # Flag for headshot hitmarker
@@ -492,7 +403,7 @@ class Game(arcade.Window):
 
         self.isLoaded = False  # Flag to check if the textures are loaded
 
-        threading.Thread(target=self.setup_revolver_textures,
+        threading.Thread(target=self.weapon_manager.setup_weapon_textures,
                          daemon=True).start()
             
         # Set ammos
@@ -525,8 +436,8 @@ class Game(arcade.Window):
             arcade.draw_xywh_rectangle_filled(
                 0, 0, self.screen_width, self.screen_height, arcade.color.BLACK)
             # Draw loading bar
-            loading_bar_width = (self.currentLoading / self.totalLoading)
-            arcade.draw_text(f"Loading textures... {self.currentLoading}/{self.totalLoading} ({loading_bar_width * 100:.2f}%)",
+            loading_bar_width = (self.weapon_manager.currentLoading / self.weapon_manager.totalLoading)
+            arcade.draw_text(f"Loading textures... {self.weapon_manager.currentLoading}/{self.weapon_manager.totalLoading} ({loading_bar_width * 100:.2f}%)",
                              self.screen_width // 2, self.screen_height // 3, arcade.color.WHITE, 12, anchor_x="center", anchor_y="center")
             # draw outline
             arcade.draw_xywh_rectangle_outline(
@@ -535,21 +446,6 @@ class Game(arcade.Window):
                 self.screen_width // 2 - 100, self.screen_height // 2 - 10, 200 * loading_bar_width, 20, arcade.color.WHITE)
             return  # Exit the draw method if textures are not loaded
         
-        if self.isLoaded and self.needs_texture_warmup:
-            # Warm up textures by drawing them off-screen
-            for tex in self.revolver_textures:
-                arcade.draw_texture_rectangle(-10, -10, 1, 1, tex)
-            for tex in self.revolver_ADS_textures:
-                arcade.draw_texture_rectangle(-10, -10, 1, 1, tex)
-            for tex in self.revolver_ADS_transition_textures:
-                arcade.draw_texture_rectangle(-10, -10, 1, 1, tex)
-            for tex in self.revolver_reload_textures:
-                arcade.draw_texture_rectangle(-10, -10, 1, 1, tex)
-                
-            # Warm up shotgun textures
-                
-            self.needs_texture_warmup = False
-            return  # Exit the draw method after warming up textures
 
         self.clear()
         self.ctx.enable(self.ctx.DEPTH_TEST)  # Ensure depth testing is enabled
@@ -704,127 +600,74 @@ class Game(arcade.Window):
             # ==========================UI========================= #
             # =======================WEAPON======================== #
 
-            if self.arsenal[0] == "REVOLVER":
-                # If the first weapon is the revolver, draw the revolver UI
-                
-                # If the revolver is in transition, use the transition textures
-
-                if self.revolver_in_reload:
-                    # If the revolver is reloading, use the reload textures
-                    current_texture = self.revolver_reload_textures[abs(
-                        math.floor(self.revolver_reload_frame))]
-                # transition anim is 8 frames contrary to the 16 frames of the shooting anim
-                elif self.revolver_in_transition and self.is_ADS and not self.revolver_in_reload:
-                    # If aiming down sights, use the ADS transition textures
-                    current_texture = self.revolver_ADS_transition_textures[abs(
-                        self.revolver_transition_frame)]
-                elif self.revolver_in_transition and not self.is_ADS and not self.revolver_in_reload:
-                    # If not aiming down sights, use the transition in reverse
-                    current_texture = self.revolver_ADS_transition_textures[abs(
-                        self.revolver_transition_frame-7)]
-                else:
-                    # If the revolver is not in transition, use the regular textures
-                    if self.is_ADS:
-                        # If aiming down sights, use the ADS textures
-                        current_texture = self.revolver_ADS_textures[self.revolver_current_frame]
-                    else:
-                        # If not aiming down sights, use the regular textures
-                        current_texture = self.revolver_textures[self.revolver_current_frame]
-                # Draw the revolver texture
-                arcade.draw_texture_rectangle(
-                    # X position (center of the screen)
-                    (self.screen_width // 2) + math.sin(
-                        time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 200,
-                    # Y position (center of the screen)
-                    (self.screen_height // 2 - 60) + math.sin(
-                        time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 100,
-                    self.screen_width,  # Width of the texture
-                    self.screen_height + 20,  # Height of the texture
-                    current_texture  # The texture to draw
-                )
-                
-            elif self.arsenal[0] == "SHOTGUN":
-                if self.shotgun_anim_running:
-                    current_texture = self.shotgun_textures[self.shotgun_current_frame]
-                else:
-                    current_texture = self.shotgun_textures[0]  # Idle frame
-    
-                arcade.draw_texture_rectangle(
-                    (self.screen_width // 2) + math.sin(
-                        time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 200,
-                    (self.screen_height // 2 - 60) + math.sin(
-                        time.time() * self.shake_speed) * self.shake_intensity * self.shake_direction * 100,
-                    self.screen_width,
-                    self.screen_height + 20,
-                    current_texture
-                )
+            self.weapon_manager.draw()
                 
             # ========================AMMO========================== #
             
-            if self.arsenal[0] == "REVOLVER":
-            # display CYLINDER
-                cylinder_radius = self.screen_width // 10
-                if self.revolver_current_frame < 8:
-                    cylinder_radius += self.revolver_current_frame // 2
-                else:
-                    cylinder_radius -= (self.revolver_current_frame - 8) // 2
+            # if self.arsenal[0] == "REVOLVER":
+            # # display CYLINDER
+            #     cylinder_radius = self.screen_width // 10
+            #     if self.revolver_current_frame < 8:
+            #         cylinder_radius += self.revolver_current_frame // 2
+            #     else:
+            #         cylinder_radius -= (self.revolver_current_frame - 8) // 2
 
-                # center of the cylinder
-                center = [self.screen_width -
-                        cylinder_radius // 2, cylinder_radius // 2]
+            #     # center of the cylinder
+            #     center = [self.screen_width -
+            #             cylinder_radius // 2, cylinder_radius // 2]
 
-                # Draw the cylinder body
-                arcade.draw_circle_filled(
-                    center[0], center[1], cylinder_radius, (45, 45, 55))
-                arcade.draw_circle_filled(
-                    center[0], center[1], cylinder_radius // 1.2, arcade.color.GRAY)
-                arcade.draw_circle_outline(
-                    center[0], center[1], cylinder_radius, arcade.color.BLACK, 4
-                )
-                # draw the cylinder middle thingy
-                arcade.draw_circle_filled(
-                    center[0], center[1], cylinder_radius // 6, (55, 55, 65))
-                arcade.draw_circle_outline(
-                    center[0], center[1], cylinder_radius // 6, arcade.color.BLACK, 4)
+            #     # Draw the cylinder body
+            #     arcade.draw_circle_filled(
+            #         center[0], center[1], cylinder_radius, (45, 45, 55))
+            #     arcade.draw_circle_filled(
+            #         center[0], center[1], cylinder_radius // 1.2, arcade.color.GRAY)
+            #     arcade.draw_circle_outline(
+            #         center[0], center[1], cylinder_radius, arcade.color.BLACK, 4
+            #     )
+            #     # draw the cylinder middle thingy
+            #     arcade.draw_circle_filled(
+            #         center[0], center[1], cylinder_radius // 6, (55, 55, 65))
+            #     arcade.draw_circle_outline(
+            #         center[0], center[1], cylinder_radius // 6, arcade.color.BLACK, 4)
 
-                # draw the cylinder bullets (5 bullets)
-                angle = 360 / 5
+            #     # draw the cylinder bullets (5 bullets)
+            #     angle = 360 / 5
 
-                # chamber is self.chamber's first 5 elements.
-                # If self.chamber length is less than 5, fill the rest with 0
-                chamber = self.chamber[:5] + [0] * (5 - len(self.chamber))
-                # all bullets that are > 0
-                ammo = len([bullet for bullet in chamber if bullet > 0])
-                back_cycle = 90
-                if self.revolver_current_frame > 0:
-                    # If the revolver is in the shooting animation
-                    back_cycle = 162
+            #     # chamber is self.chamber's first 5 elements.
+            #     # If self.chamber length is less than 5, fill the rest with 0
+            #     chamber = self.chamber[:5] + [0] * (5 - len(self.chamber))
+            #     # all bullets that are > 0
+            #     ammo = len([bullet for bullet in chamber if bullet > 0])
+            #     back_cycle = 90
+            #     if self.revolver_current_frame > 0:
+            #         # If the revolver is in the shooting animation
+            #         back_cycle = 162
 
-                for i in range(5):
-                    # Calculate the position of each bullet
-                    bullet_angle = math.radians(
-                        angle * i) + math.radians(back_cycle) - math.radians(self.cylinder_spin)
-                    # Calculate the bullet's position based on the angle
-                    bullet_x = center[0] + \
-                        cylinder_radius // 2 * math.cos(bullet_angle)
-                    bullet_y = center[1] + \
-                        cylinder_radius // 2 * math.sin(bullet_angle)
+            #     for i in range(5):
+            #         # Calculate the position of each bullet
+            #         bullet_angle = math.radians(
+            #             angle * i) + math.radians(back_cycle) - math.radians(self.cylinder_spin)
+            #         # Calculate the bullet's position based on the angle
+            #         bullet_x = center[0] + \
+            #             cylinder_radius // 2 * math.cos(bullet_angle)
+            #         bullet_y = center[1] + \
+            #             cylinder_radius // 2 * math.sin(bullet_angle)
 
-                    # Draw the bullet starting from the top of the cylinder
-                    top_bullet = chamber[i - (self.cylinder_spin // 72) % 5]
-                    if top_bullet == 1:
-                        arcade.draw_circle_filled(
-                            bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
-                    elif top_bullet == 2:
-                        arcade.draw_circle_filled(
-                            bullet_x, bullet_y, cylinder_radius // 6, arcade.color.GOLD)
-                    else:
-                        arcade.draw_circle_filled(
-                            bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK)
+            #         # Draw the bullet starting from the top of the cylinder
+            #         top_bullet = chamber[i - (self.cylinder_spin // 72) % 5]
+            #         if top_bullet == 1:
+            #             arcade.draw_circle_filled(
+            #                 bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
+            #         elif top_bullet == 2:
+            #             arcade.draw_circle_filled(
+            #                 bullet_x, bullet_y, cylinder_radius // 6, arcade.color.GOLD)
+            #         else:
+            #             arcade.draw_circle_filled(
+            #                 bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK)
 
-                    # Draw the bullet outline
-                    arcade.draw_circle_outline(
-                        bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK, 2)
+            #         # Draw the bullet outline
+            #         arcade.draw_circle_outline(
+            #             bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK, 2)
             
                 
             # ======================CROSSHAIR====================== #
@@ -901,79 +744,79 @@ class Game(arcade.Window):
             
             # WEAPON SELECTION
             
-            # Draw weapon selection icons: equipped weapon left (big), unequipped right (small)
-            icon_scale_selected = 3.0
-            icon_scale_unselected = 2.2
-            icon_padding = 30
+            # # Draw weapon selection icons: equipped weapon left (big), unequipped right (small)
+            # icon_scale_selected = 3.0
+            # icon_scale_unselected = 2.2
+            # icon_padding = 30
 
-            # Calculate icon positions
-            left_x = self.screen_width // 36
-            left_y = self.screen_height // 28
+            # # Calculate icon positions
+            # left_x = self.screen_width // 36
+            # left_y = self.screen_height // 28
 
-            # Determine which weapon is equipped
-            if self.arsenal[0] == "REVOLVER":
-                # Equipped: revolver left, shotgun right
-                left_icon = self.revolver_icon
-                left_border = arcade.color.YELLOW
-                left_scale = icon_scale_selected
+            # # Determine which weapon is equipped
+            # if self.weapon_manager.current == "REVOLVER":
+            #     # Equipped: revolver left, shotgun right
+            #     left_icon = self.revolver_icon
+            #     left_border = arcade.color.YELLOW
+            #     left_scale = icon_scale_selected
 
-                right_icon = self.shotgun_icon
-                right_border = arcade.color.GRAY
-                right_scale = icon_scale_unselected
+            #     right_icon = self.shotgun_icon
+            #     right_border = arcade.color.GRAY
+            #     right_scale = icon_scale_unselected
 
-                right_x = left_x + int(self.revolver_icon.width * left_scale) + icon_padding
-            else:
-                # Equipped: shotgun left, revolver right
-                left_icon = self.shotgun_icon
-                left_border = arcade.color.YELLOW
-                left_scale = icon_scale_selected
+            #     right_x = left_x + int(self.revolver_icon.width * left_scale) + icon_padding
+            # elif self.weapon_manager.current == "SHOTGUN":
+            #     # Equipped: shotgun left, revolver right
+            #     left_icon = self.shotgun_icon
+            #     left_border = arcade.color.YELLOW
+            #     left_scale = icon_scale_selected
 
-                right_icon = self.revolver_icon
-                right_border = arcade.color.GRAY
-                right_scale = icon_scale_unselected
+            #     right_icon = self.revolver_icon
+            #     right_border = arcade.color.GRAY
+            #     right_scale = icon_scale_unselected
 
-                # Move revolver further right because shotgun is longer
-                right_x = left_x + int(self.shotgun_icon.width * left_scale) + icon_padding + 20  # Add extra offset if needed
+            #     # Move revolver further right because shotgun is longer
+            #     right_x = left_x + int(self.shotgun_icon.width * left_scale) + icon_padding + 20  # Add extra offset if needed
 
-            right_y = left_y
+            # right_y = left_y
 
-            # Draw left (equipped) icon
-            arcade.draw_xywh_rectangle_filled(
-                left_x, left_y,
-                int(left_icon.width * left_scale), int(left_icon.height * left_scale),
-                (30, 30, 30, 200)
-            )
-            arcade.draw_texture_rectangle(
-                left_x + int(left_icon.width * left_scale // 2),
-                left_y + int(left_icon.height * left_scale // 2),
-                int(left_icon.width * left_scale), int(left_icon.height * left_scale),
-                left_icon
-            )
-            arcade.draw_rectangle_outline(
-                left_x + int(left_icon.width * left_scale // 2),
-                left_y + int(left_icon.height * left_scale // 2),
-                int(left_icon.width * left_scale), int(left_icon.height * left_scale),
-                left_border, 3
-            )
+            # # Draw left (equipped) icon
+            # arcade.draw_xywh_rectangle_filled(
+            #     left_x, left_y,
+            #     int(left_icon.width * left_scale), int(left_icon.height * left_scale),
+            #     (30, 30, 30, 200)
+            # )
+            # arcade.draw_texture_rectangle(
+            #     left_x + int(left_icon.width * left_scale // 2),
+            #     left_y + int(left_icon.height * left_scale // 2),
+            #     int(left_icon.width * left_scale), int(left_icon.height * left_scale),
+            #     left_icon
+            # )
+            # arcade.draw_rectangle_outline(
+            #     left_x + int(left_icon.width * left_scale // 2),
+            #     left_y + int(left_icon.height * left_scale // 2),
+            #     int(left_icon.width * left_scale), int(left_icon.height * left_scale),
+            #     left_border, 3
+            # )
 
-            # Draw right (unequipped) icon
-            arcade.draw_xywh_rectangle_filled(
-                right_x, right_y,
-                int(right_icon.width * right_scale), int(right_icon.height * right_scale),
-                (30, 30, 30, 200)
-            )
-            arcade.draw_texture_rectangle(
-                right_x + int(right_icon.width * right_scale // 2),
-                right_y + int(right_icon.height * right_scale // 2),
-                int(right_icon.width * right_scale), int(right_icon.height * right_scale),
-                right_icon
-            )
-            arcade.draw_rectangle_outline(
-                right_x + int(right_icon.width * right_scale // 2),
-                right_y + int(right_icon.height * right_scale // 2),
-                int(right_icon.width * right_scale), int(right_icon.height * right_scale),
-                right_border, 3
-            )
+            # # Draw right (unequipped) icon
+            # arcade.draw_xywh_rectangle_filled(
+            #     right_x, right_y,
+            #     int(right_icon.width * right_scale), int(right_icon.height * right_scale),
+            #     (30, 30, 30, 200)
+            # )
+            # arcade.draw_texture_rectangle(
+            #     right_x + int(right_icon.width * right_scale // 2),
+            #     right_y + int(right_icon.height * right_scale // 2),
+            #     int(right_icon.width * right_scale), int(right_icon.height * right_scale),
+            #     right_icon
+            # )
+            # arcade.draw_rectangle_outline(
+            #     right_x + int(right_icon.width * right_scale // 2),
+            #     right_y + int(right_icon.height * right_scale // 2),
+            #     int(right_icon.width * right_scale), int(right_icon.height * right_scale),
+            #     right_border, 3
+            # )
             # ======================INTERACTIONS========================== #
             if len(self.interactions) > 0:
                 if self.interactions[0]["active"]:
@@ -1074,6 +917,15 @@ class Game(arcade.Window):
                 arcade.color.WHITE,
                 12,
             )
+            
+            # is ads
+            arcade.draw_text(
+                f"Is ADS: {self.is_ADS}",
+                10,
+                self.screen_height - 100,
+                arcade.color.WHITE,
+                12,
+            )
         except Exception as e:
             print(f"Error drawing texture: {e}")
 
@@ -1084,9 +936,11 @@ class Game(arcade.Window):
         # Update the time
         self.time += delta_time
 
-        if not self.isLoaded:
+        if not self.weapon_manager.isLoaded:
             # If textures are not loaded, skip the update
             return
+        elif not self.isLoaded:
+            self.isLoaded = True
 
         # Update object list
         self.objects.sort(key=self.get_distance, reverse=True)
@@ -1132,113 +986,8 @@ class Game(arcade.Window):
             if self.hitmarker_timer <= self.time:
                 self.hitmarker = False
                 self.hitmarker_timer = 0  # Reset the hitmarker timer
-
-        # Update the revolver animation frame
-        if self.is_ADS:
-            # Zoom in
-            if self.fov > 70:
-                # Zoom in
-                self.fov -= 3
-            self.mouse_sensitivity = 0.0005
-        else:
-            if self.fov < 90:
-                # Zoom out
-                self.fov += 3
-            self.mouse_sensitivity = 0.001
-
-        if self.revolver_in_reload:
-            # Update the reload animation frame
-            self.revolver_reload_frame += 0.75
-            if self.revolver_reload_frame >= len(self.revolver_reload_textures):
-                self.revolver_in_reload = False
-                self.revolver_reload_frame = 0
-
-        if self.revolver_in_transition and not self.revolver_in_reload:
-            self.revolver_transition_frame += 1
-            if self.revolver_transition_frame >= len(self.revolver_ADS_transition_textures):
-                self.revolver_in_transition = False
-                self.revolver_transition_frame = 0  # Reset the transition frame
-
-            if self.revolver_transition_frame == len(self.revolver_ADS_transition_textures)-1:
-                self.cylinder_spin = 0
-
-        if self.revolver_in_reload:
-            intFrame = int(self.revolver_reload_frame +
-                           (self.revolver_reload_frame / 0.75 * 0.25))
-
-            try:
-                if intFrame > 15 and intFrame < 21:
-                    try:
-                        self.chamber[intFrame - 16] = 0
-                    except IndexError:
-                        self.chamber.append(0)
-
-                if intFrame > 39 and intFrame < 45:
-                    self.chamber[intFrame - 40] = 1
-                # spin the cylinder during reload
-
-                if intFrame > 41:
-                    self.cylinder_spin += 12
-                    # Reset the spin if it exceeds 360 degrees
-                    if self.cylinder_spin >= 360:
-                        self.cylinder_spin = self.cylinder_spin - 360
-
-                else:
-                    if intFrame > 12:
-                        # spin the cylinder
-                        self.cylinder_spin -= 4
-                        # Reset the spin if it exceeds 360 degrees
-                        if self.cylinder_spin >= 360:
-                            self.cylinder_spin = 0
-            except IndexError:
-                # nothing
-                pass
-
-            if intFrame == len(self.revolver_reload_textures)-1:
-                self.cylinder_spin = 0
-                if self.is_ADS:
-                    self.revolver_in_transition = True
-                    self.revolver_transition_frame = 0
-                else:
-                    self.revolver_in_transition = False
-                    self.revolver_transition_frame = 0
-
-        if self.revolver_weapon_anim_running and not self.revolver_in_reload:
-            # Calculate the spin based on the current frame
-            # 12 frames to spin 72 degrees
-            if self.revolver_current_frame > 3:
-                self.cylinder_spin += 6
-            # Reset the spin if it exceeds 360 degrees
-            if self.cylinder_spin >= 360:
-                self.cylinder_spin = 0
-
-            # Update the revolver animation frame
-            if self.revolver_current_frame < 3:
-                if self.is_ADS:
-                    self.camera_rot.x -= 0.005  # Adjust the camera rotation for the animation
-                else:
-                    self.camera_rot.x -= 0.01  # Adjust the camera rotation for the animation
-            # Update the time accumulator
-            self.revolver_time_since_last_frame += 0.5
-            # Check if it's time to update the frame
-            if self.revolver_time_since_last_frame >= self.animation_speed:
-                self.revolver_time_since_last_frame = 0  # Reset the time accumulator
-                self.revolver_current_frame += 1  # Move to the next frame
-
-                # Loop back to the first frame if we reach the end
-                if self.revolver_current_frame >= len(self.revolver_textures):
-                    self.revolver_current_frame = 0
-                    self.cylinder_spin = 0
-                    self.revolver_weapon_anim_running = False  # Stop the animation after one cycle
-        
-        if self.shotgun_anim_running:
-            self.shotgun_time_since_last_frame += 0.5
-            if self.shotgun_time_since_last_frame >= self.shotgun_animation_speed:
-                self.shotgun_time_since_last_frame = 0
-                self.shotgun_current_frame += 1
-                if self.shotgun_current_frame >= len(self.shotgun_textures):
-                    self.shotgun_current_frame = 0
-                    self.shotgun_anim_running = False  # Stop animation
+                
+        self.weapon_manager.update(delta_time)
 
         for obj in self.objects:
             if obj["id"] == 4:
@@ -1539,14 +1288,10 @@ class Game(arcade.Window):
             self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
             
         elif key == arcade.key.KEY_1:
-            if "REVOLVER" in self.arsenal:
-                while self.arsenal[0] != "REVOLVER":
-                    self.arsenal = self.arsenal[1:] + [self.arsenal[0]]
-                
+            self.weapon_manager.switch("REVOLVER")
+
         elif key == arcade.key.KEY_2:
-            if "SHOTGUN" in self.arsenal:
-                while self.arsenal[0] != "SHOTGUN":
-                    self.arsenal = self.arsenal[1:] + [self.arsenal[0]]
+            self.weapon_manager.switch("SHOTGUN")
 
         elif key == arcade.key.G:
             # throw grenade
@@ -1560,17 +1305,9 @@ class Game(arcade.Window):
             }
 
         elif key == arcade.key.R:
-            # Reload the revolver
-            print("Reloading!")
-            self.revolver_in_reload = True
-            if self.debugMode:
-                # Fill the chamber with bullets for debugging
-                self.chamber = [1] * self.revolver_max_ammo
+            self.weapon_manager.reload_weapon()
+            
 
-            # self.chamber = [1] * self.revolver_max_ammo  # Fill the chamber with bullets
-
-            # if len(self.chamber) < self.revolver_max_ammo:
-            #     self.chamber.append(1)  # Add a bullet to the chamber
 
         elif key == arcade.key.F:
             for rays in self.debug_rays:
@@ -1618,114 +1355,65 @@ class Game(arcade.Window):
             self.camera_rot.x -= dy * self.mouse_sensitivity  # Invert pitch adjustment
             
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if not self.isLoaded:
-            return
-        if scroll_y > 0:
-            # Scroll up: next weapon
-            self.arsenal = self.arsenal[1:] + [self.arsenal[0]]
-        elif scroll_y < 0:
-            # Scroll down: previous weapon
-            self.arsenal = [self.arsenal[-1]] + self.arsenal[:-1]
-
+        pass  
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.isLoaded:
             # If textures are not loaded, skip key presses
             return
         if button == arcade.MOUSE_BUTTON_LEFT:
-            # check if there are ammo
-            if self.arsenal[0] == "REVOLVER":
-                if len([bullet for bullet in self.chamber if bullet > 0]) > 0:
-                    if not self.revolver_weapon_anim_running:  # Start the animation only if it's not already running
-                        print("Shooting!")
-                        # Decrease ammo count
-                        self.chamber.pop(0)
+            if self.weapon_manager.shoot():
+                self.debug_rays = []  # Clear debug rays
 
-                        self.revolver_weapon_anim_running = True
-                        self.revolver_current_frame = 0  # Reset to the first frame
+                # raycast amd get the object hit
+                ray_start = Vec3(
+                    -self.camera_pos.x,
+                    -self.camera_pos.y,
+                    -self.camera_pos.z
+                )
 
-                        # # shoot projectile
-                        # projectile = {
-                        #     "id": 4,
-                        #     "model": Vec3(-self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z),
-                        #     "velocity": Vec3(0, 0, 0),
-                        #     "program": self.sphere_program,
-                        #     "geometry": self.generate_sphere(
-                        #         0.1, 10, 10, position=self.camera_pos),
-                        # }
-                        # # Set the projectile's velocity based on the camera direction
-                        # projectile["velocity"] = Vec3(
-                        #     math.sin(self.camera_rot.y),
-                        #     -math.sin(self.camera_rot.x),
-                        #     -math.cos(self.camera_rot.y),
-                        # )
+                ray_direction = Vec3(
+                    math.sin(self.camera_rot.y),
+                    -math.sin(self.camera_rot.x),
+                    -math.cos(self.camera_rot.y),
+                )
 
-                        # self.projectiles.append(projectile)
-                        # # Add the projectile to the list of objects
-                        # self.objects.append(projectile)
+                raycast_result, hs = raycast.raycast(
+                    ray_start, ray_direction, self.objects)
+                self.debug_rays.append(
+                    (ray_start, ray_start + ray_direction.normalize().scale(100) + Vec3(
+                        random.uniform(-0.1, 0.1),
+                        random.uniform(-0.1, 0.1),
+                        random.uniform(-0.1, 0.1)
+                    ), (random.random(), random.random(),
+                        random.random()), self.time  # Add a timestamp for the ray
+                    ))
+                if raycast_result:
+                    if raycast_result["id"] == 10:
+                        # If the hit object is the enemy, apply damage
+                        print("Hit enemy!")
+                        if hs:
+                            raycast_result["object"].apply_damage(
+                                20)  # Apply 20 damage for headshot
+                            print("Headshot!")
+                            self.HS_hitmarker = True
+                            self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
+                        else:
+                            raycast_result["object"].apply_damage(
+                                10)  # Apply 10 damage if no headshot
+                            self.hitmarker = True
+                            self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
+                    elif raycast_result["id"] == 1 and self.debugMode:
+                        print(f"Hit wall {raycast_result['name']}!")
+                    print(f"Hit: {raycast_result['name']}!")
 
-                        self.debug_rays = []  # Clear debug rays
-
-                        # raycast amd get the object hit
-                        ray_start = Vec3(
-                            -self.camera_pos.x,
-                            -self.camera_pos.y,
-                            -self.camera_pos.z
-                        )
-
-                        ray_direction = Vec3(
-                            math.sin(self.camera_rot.y),
-                            -math.sin(self.camera_rot.x),
-                            -math.cos(self.camera_rot.y),
-                        )
-
-                        raycast_result, hs = raycast.raycast(
-                            ray_start, ray_direction, self.objects)
-                        self.debug_rays.append(
-                            (ray_start, ray_start + ray_direction.normalize().scale(100) + Vec3(
-                                random.uniform(-0.1, 0.1),
-                                random.uniform(-0.1, 0.1),
-                                random.uniform(-0.1, 0.1)
-                            ), (random.random(), random.random(),
-                                random.random()), self.time  # Add a timestamp for the ray
-                            ))
-                        if raycast_result:
-                            if raycast_result["id"] == 10:
-                                # If the hit object is the enemy, apply damage
-                                print("Hit enemy!")
-                                if hs:
-                                    raycast_result["object"].apply_damage(
-                                        20)  # Apply 20 damage for headshot
-                                    print("Headshot!")
-                                    self.HS_hitmarker = True
-                                    self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
-                                else:
-                                    raycast_result["object"].apply_damage(
-                                        10)  # Apply 10 damage if no headshot
-                                    self.hitmarker = True
-                                    self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
-                            elif raycast_result["id"] == 1 and self.debugMode:
-                                print(f"Hit wall {raycast_result['name']}!")
-                            print(f"Hit: {raycast_result['name']}!")
-                else:
-                    self.revolver_in_reload = True
-            
-            elif self.arsenal[0] == "SHOTGUN":
-                if not self.shotgun_anim_running:
-                    print("Shotgun fired!")
-                    self.shotgun_anim_running = True
-                    self.shotgun_current_frame = 0
-                    self.shotgun_time_since_last_frame = 0
-                    # (decrease ammo, spawn projectile, etc.)
-
+                        
         if button == arcade.MOUSE_BUTTON_RIGHT:
-            # Check if the right mouse button is pressed
-            self.revolver_in_transition = True
+            self.weapon_manager.ADS(True)
             self.is_ADS = True
 
     def on_mouse_release(self, x, y, button, modifiers):
         if button == arcade.MOUSE_BUTTON_RIGHT:
-            # Check if the right mouse button is released
-            self.revolver_in_transition = True
+            self.weapon_manager.ADS(False)
             self.is_ADS = False
 
     def on_key_release(self, key, modifiers):

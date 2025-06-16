@@ -89,11 +89,8 @@ def raycast(ray_start, ray_direction, objects, ray_length=100):
     closest_hit = None
     closest_distance = float('inf')
     
-    # reverse the obj
-    objects = objects[::-1]
-    
     # Iterate through all objects in the scene
-    for obj in objects:
+    for obj in objects[::-1]:
         if obj["id"] == 1:  # Wall
             positions = obj["buffer_data"]
             num_vertices = len(positions) // 5

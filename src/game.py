@@ -1362,50 +1362,94 @@ class Game(arcade.Window):
             return
         if button == arcade.MOUSE_BUTTON_LEFT:
             if self.weapon_manager.shoot():
-                self.debug_rays = []  # Clear debug rays
+                if self.weapon_manager.current.type == "REVOLVER":
+                    self.debug_rays = []  # Clear debug rays
 
-                # raycast amd get the object hit
-                ray_start = Vec3(
-                    -self.camera_pos.x,
-                    -self.camera_pos.y,
-                    -self.camera_pos.z
-                )
+                    # raycast amd get the object hit
+                    ray_start = Vec3(
+                        -self.camera_pos.x,
+                        -self.camera_pos.y,
+                        -self.camera_pos.z
+                    )
 
-                ray_direction = Vec3(
-                    math.sin(self.camera_rot.y),
-                    -math.sin(self.camera_rot.x),
-                    -math.cos(self.camera_rot.y),
-                )
+                    ray_direction = Vec3(
+                        math.sin(self.camera_rot.y),
+                        -math.sin(self.camera_rot.x),
+                        -math.cos(self.camera_rot.y),
+                    )
 
-                raycast_result, hs = raycast.raycast(
-                    ray_start, ray_direction, self.objects)
-                self.debug_rays.append(
-                    (ray_start, ray_start + ray_direction.normalize().scale(100) + Vec3(
-                        random.uniform(-0.1, 0.1),
-                        random.uniform(-0.1, 0.1),
-                        random.uniform(-0.1, 0.1)
-                    ), (random.random(), random.random(),
-                        random.random()), self.time  # Add a timestamp for the ray
-                    ))
-                if raycast_result:
-                    if raycast_result["id"] == 10:
-                        # If the hit object is the enemy, apply damage
-                        print("Hit enemy!")
-                        if hs:
-                            raycast_result["object"].apply_damage(
-                                20)  # Apply 20 damage for headshot
-                            print("Headshot!")
-                            self.HS_hitmarker = True
-                            self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
-                        else:
-                            raycast_result["object"].apply_damage(
-                                10)  # Apply 10 damage if no headshot
-                            self.hitmarker = True
-                            self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
-                    elif raycast_result["id"] == 1 and self.debugMode:
-                        print(f"Hit wall {raycast_result['name']}!")
-                    print(f"Hit: {raycast_result['name']}!")
-
+                    raycast_result, hs = raycast.raycast(
+                        ray_start, ray_direction, self.objects)
+                    self.debug_rays.append(
+                        (ray_start, ray_start + ray_direction.normalize().scale(100) + Vec3(
+                            random.uniform(-0.1, 0.1),
+                            random.uniform(-0.1, 0.1),
+                            random.uniform(-0.1, 0.1)
+                        ), (random.random(), random.random(),
+                            random.random()), self.time  # Add a timestamp for the ray
+                        ))
+                    if raycast_result:
+                        if raycast_result["id"] == 10:
+                            # If the hit object is the enemy, apply damage
+                            print("Hit enemy!")
+                            if hs:
+                                raycast_result["object"].apply_damage(
+                                    20)  # Apply 20 damage for headshot
+                                print("Headshot!")
+                                self.HS_hitmarker = True
+                                self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
+                            else:
+                                raycast_result["object"].apply_damage(
+                                    10)  # Apply 10 damage if no headshot
+                                self.hitmarker = True
+                                self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
+                        elif raycast_result["id"] == 1 and self.debugMode:
+                            print(f"Hit wall {raycast_result['name']}!")
+                        print(f"Hit: {raycast_result['name']}!")
+                elif self.weapon_manager.current.type == "SHOTGUN":
+                    self.debug_rays = []
+                    ray_start = Vec3(
+                        -self.camera_pos.x,
+                        -self.camera_pos.y,
+                        -self.camera_pos.z
+                    )
+                    for _ in range(5):  # Shoot 5 pellets
+                        # Add random bloom to the direction
+                        bloom_x = random.uniform(-0.08, 0.08)
+                        bloom_y = random.uniform(-0.08, 0.08)
+                        bloom_z = random.uniform(-0.08, 0.08)
+                        ray_direction = Vec3(
+                            math.sin(self.camera_rot.y) + bloom_x,
+                            -math.sin(self.camera_rot.x) + bloom_y,
+                            -math.cos(self.camera_rot.y) + bloom_z,
+                        )
+                        raycast_result, hs = raycast.raycast(
+                            ray_start, ray_direction, self.objects)
+                        # Draw debug ray for each pellet
+                        self.debug_rays.append(
+                            (ray_start, ray_start + ray_direction.normalize().scale(50) + Vec3(
+                                random.uniform(-0.1, 0.1),
+                                random.uniform(-0.1, 0.1),
+                                random.uniform(-0.1, 0.1)
+                            ), (random.random(), random.random(),
+                                random.random()), self.time
+                            )
+                        )
+                        if raycast_result:
+                            if raycast_result["id"] == 10:
+                                print("Hit enemy!")
+                                if hs:
+                                    raycast_result["object"].apply_damage(10)
+                                    print("Headshot!")
+                                    self.HS_hitmarker = True
+                                    self.hitmarker_timer = self.time + 0.2
+                                else:
+                                    raycast_result["object"].apply_damage(5)
+                                    self.hitmarker = True
+                                    self.hitmarker_timer = self.time + 0.2
+                            elif raycast_result["id"] == 1 and self.debugMode:
+                                print(f"Hit wall {raycast_result['name']}!")
+                            print(f"Hit: {raycast_result['name']}!")
                         
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.weapon_manager.ADS(True)

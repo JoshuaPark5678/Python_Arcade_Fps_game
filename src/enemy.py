@@ -487,6 +487,6 @@ class Enemy3(Enemy):
         super().__init__(game, walls, enemy_walls, position, health, rotation)
         self.speed = 0.02
         self.normal_speed = 0.05  # Store normal speed
-        self.slow_speed = 0.01   # Slowed speed
+        self.slow_speed = 0.05   # Same as normal speed
         self.health = 500  # Increased health
         self.max_health = 500

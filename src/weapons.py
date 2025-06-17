@@ -71,6 +71,9 @@ class Revolver(Weapon):
         self.chamber = [1] * self.max_ammo
         self.cylinder_spin = 0  # Spin of the cylinder
         self.spin_aim = 0  # The cylinder spin till reaching the aim
+        
+        self.shoot_sound = None
+        self.reload_sound = None
         # ...add more as needed
 
     def draw_cylinder(self):
@@ -181,12 +184,17 @@ class Revolver(Weapon):
             self.time_since_last_frame = 0
 
             self.spin_aim = (self.cylinder_spin + 72) % 360
+            
+            # play the shoot sound
+            self.shoot_sound.play()
 
     def reload_weapon(self):
         if not self.in_reload:
             self.in_reload = True
             self.reload_frame = 0
             self.time_since_last_frame = 0
+            
+            self.reload_sound.play(speed=2.0)
 
     def update(self, delta_time):
         self.shake_speed = self.game.shake_speed
@@ -292,6 +300,9 @@ class Shotgun(Weapon):
         self.time_since_last_frame = 0
         self.animation_speed = 0.03
         self.chamber = [1] * self.max_ammo
+        
+        self.shoot_sound = None
+        self.reload_sound = None
         # ...add more as needed
 
     def draw(self):
@@ -379,6 +390,9 @@ class Shotgun(Weapon):
             self.current_frame = 0
             self.anim_running = True
             self.time_since_last_frame = 0
+            
+            # play the shoot sound
+            self.shoot_sound.play()
 
     def reload_weapon(self):
         if not self.in_reload:
@@ -386,6 +400,8 @@ class Shotgun(Weapon):
             self.reload_frame = 0
             self.time_since_last_frame = 0
             self.anim_running = True
+            
+            self.reload_sound.play()
 
     def update(self, delta_time):
         self.shake_speed = self.game.shake_speed
@@ -416,6 +432,8 @@ class Shotgun(Weapon):
                     if self.current_frame >= len(self.ADS_shoot_textures):
                         self.current_frame = 0
                         self.anim_running = False
+                elif self.current_frame == len(self.shoot_textures) - 10:
+                    self.reload_sound.play()
                 else:
                     if self.current_frame >= len(self.shoot_textures):
                         self.current_frame = 0
@@ -460,7 +478,18 @@ class WeaponManager:
         self.totalLoading = 100
 
         self.is_ADS = False
-        # Only hold-to-ADS mode
+
+        self.setup_sounds(game)
+
+    def setup_sounds(self, game):
+        self.weapons["REVOLVER"].shoot_sound = arcade.load_sound(
+            f"{game.file_dir}/sounds/revolver_shoot.wav")
+        self.weapons["SHOTGUN"].shoot_sound = arcade.load_sound(
+            f"{game.file_dir}/sounds/shotgun_shoot.wav")
+        self.weapons["REVOLVER"].reload_sound = arcade.load_sound(
+            f"{game.file_dir}/sounds/revolver_spin.wav")
+        self.weapons["SHOTGUN"].reload_sound = arcade.load_sound(
+            f"{game.file_dir}/sounds/shotgun_pump.wav")
 
     def switch(self, weapon_name):
         if weapon_name in self.weapons:

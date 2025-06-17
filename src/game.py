@@ -18,6 +18,7 @@ import threading
 import level1
 import level2
 import level3
+import level5
 
 # ----- UTILS ----- #
 import gltf_utils
@@ -58,7 +59,7 @@ class Game(arcade.Window):
         arcade.get_window().set_icon(self.icon)
 
         self.levels = [
-            level3,
+            level5,
             level1,
             level2,
             level3
@@ -67,10 +68,10 @@ class Game(arcade.Window):
         # debug variable
         self.debugVal = 0
         self.debugMode = False  # Debug mode flag
-        
+
         # set frame rate
         self.set_update_rate(1/60)
-        
+
         # SCREEN DIMENSIONS
         self.screen_width = SCREEN_WIDTH
         self.screen_height = SCREEN_HEIGHT
@@ -214,6 +215,12 @@ class Game(arcade.Window):
             """
         )
 
+        self.game_music = arcade.load_sound(
+            f"{self.file_dir}/sounds/game_music.mp3"
+        )
+
+        self.game_music.play(loop=True, volume=0.1)
+
         self.setup()
 
     def setup_textures(self):
@@ -265,7 +272,6 @@ class Game(arcade.Window):
         self.texture3.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture4.filter = self.ctx.NEAREST, self.ctx.NEAREST
 
-        
     def setup(self):
         # Set the background color
         arcade.set_background_color(arcade.color.DARK_BLUE_GRAY)
@@ -285,28 +291,27 @@ class Game(arcade.Window):
         self.plane["projection"] = self.proj
 
         ground_array = array(
-                'f',
-                [
-                    # Position         UV
-                    -100, -2, 100,       0, 150,  # Top Left
-                    -100, -2, -200,      0, 0,   # Bottom Left
-                    100, -2, 100,        100, 150,  # Top Right
-                    100, -2, -200,       100, 0,  # Bottom Right
-                ]
-            )
+            'f',
+            [
+                # Position         UV
+                -100, -2, 100,       0, 150,  # Top Left
+                -100, -2, -200,      0, 0,   # Bottom Left
+                100, -2, 100,        100, 150,  # Top Right
+                100, -2, -200,       100, 0,  # Bottom Right
+            ]
+        )
 
         ceiling_array = array(
-                'f',
-                [
-                    # Position         UV
-                    -100, 6, 100,       0, 150,  # Top Left
-                    -100, 6, -200,      0, 0,   # Bottom Left
-                    100, 6, 100,        150, 150,  # Top Right
-                    100, 6, -200,       150, 0,  # Bottom Right
-                ]
-            )
-        
-        
+            'f',
+            [
+                # Position         UV
+                -100, 6, 100,       0, 150,  # Top Left
+                -100, 6, -200,      0, 0,   # Bottom Left
+                100, 6, 100,        150, 150,  # Top Right
+                100, 6, -200,       150, 0,  # Bottom Right
+            ]
+        )
+
         # Ground geometry
         ground_buffer = self.ctx.buffer(
             data=ground_array
@@ -347,7 +352,7 @@ class Game(arcade.Window):
 
         self.enemy1_path = [f"{self.file_dir}/models/crazy_boy_noarm.gltf",
                             f"{self.file_dir}/models/crazy_boy_noarm.bin"]
-        
+
         self.enemy2_path = [f"{self.file_dir}/models/tall_guy.gltf",
                             f"{self.file_dir}/models/tall_guy.bin"]
 
@@ -392,13 +397,13 @@ class Game(arcade.Window):
         self.shake_direction = 0
 
         self.weapon_manager = weapons.WeaponManager(self)
-        
+
         self.revolver_icon = arcade.load_texture(
             f"{self.file_dir}/model_ui/arsenal_icons/revolver_icon.png")
 
         self.shotgun_icon = arcade.load_texture(
             f"{self.file_dir}/model_ui/arsenal_icons/shotgun_icon.png")
-        
+
         self.revolver_icon.filter = pyglet.gl.GL_NEAREST, pyglet.gl.GL_NEAREST
         self.shotgun_icon.filter = pyglet.gl.GL_NEAREST, pyglet.gl.GL_NEAREST
 
@@ -408,20 +413,19 @@ class Game(arcade.Window):
 
         self.interactions = []  # List to store interactions with objects
         self.interaction_feedback = ""      # Message to show after interaction
-        self.interaction_feedback_timer = 0 # Time until feedback disappears
+        self.interaction_feedback_timer = 0  # Time until feedback disappears
 
         self.isLoaded = False  # Flag to check if the textures are loaded
 
         threading.Thread(target=self.weapon_manager.setup_weapon_textures,
                          daemon=True).start()
-            
+
         # Set ammos
         self.revolver_max_ammo = 5  # Maximum ammo count
         self.shotgun_max_ammo = 4  # Maximum ammo count for shotgun
-        
+
         self.cylinder_spin = 0  # Cylinder spin angle
-        
-        
+
         # Chamber state (1 for loaded, 0 for empty)
         self.chamber = [1] * self.revolver_max_ammo
         self.shell_holder = [1] * self.shotgun_max_ammo
@@ -436,7 +440,64 @@ class Game(arcade.Window):
         # Each ray is (start: Vec3, end: Vec3, color: tuple)
         self.debug_rays = []
 
+        self.state = "TITLE"  # Add game state for title screen
+
     def on_draw(self):
+        if self.state == "TITLE":
+            self.clear()
+            # Animated background gradient
+            for i in range(0, self.screen_height, 4):
+                t = i / self.screen_height
+                # Animate the gradient with time
+                phase = self.time * 0.5
+                r = int(30 + 60 * (0.5 + 0.5 * math.sin(phase + t * 2)))
+                g = int(30 + 60 * (0.5 + 0.5 * math.sin(phase + t * 3 + 2)))
+                b = int(60 + 100 * (0.5 + 0.5 * math.sin(phase + t * 4 + 4)))
+                arcade.draw_lrtb_rectangle_filled(
+                    0, self.screen_width, self.screen_height -
+                    i, self.screen_height - i - 4, (r, g, b)
+                )
+
+            # Pulsing title color
+            pulse = 0.5 + 0.5 * math.sin(self.time * 2)
+            title_color = (
+                int(200 + 55 * pulse),
+                int(200 - 100 * pulse),
+                int(255 - 100 * pulse)
+            )
+            arcade.draw_text(
+                "TERMINUS",
+                self.screen_width // 2,
+                self.screen_height // 2 + 60,
+                title_color,
+                48 + int(8 * pulse),
+                anchor_x="center",
+                anchor_y="center",
+                bold=True,
+                font_name="Kenney Future"
+            )
+            # Pulsing "Press ENTER" text
+            enter_alpha = int(180 + 75 * (0.5 + 0.5 * math.sin(self.time * 3)))
+            arcade.draw_text(
+                "Press ENTER to Start",
+                self.screen_width // 2,
+                self.screen_height // 2 - 20,
+                (220, 220, 220, enter_alpha),
+                26,
+                anchor_x="center",
+                anchor_y="center",
+                font_name="Kenney Future"
+            )
+            # Optionally, add floating particles or shapes for extra flair
+            for i in range(12):
+                angle = self.time * 0.7 + i * (2 * math.pi / 12)
+                x = self.screen_width // 2 + int(180 * math.cos(angle))
+                y = self.screen_height // 2 + int(120 * math.sin(angle))
+                size = 8 + 4 * math.sin(self.time * 2 + i)
+                color = (100 + i * 10, 100 + i * 8, 180 + i * 6, 80)
+                arcade.draw_circle_filled(x, y, size, color)
+            return  # Don't draw the game if on the title screen
+
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
             self.setup_textures()
 
@@ -445,7 +506,8 @@ class Game(arcade.Window):
             arcade.draw_xywh_rectangle_filled(
                 0, 0, self.screen_width, self.screen_height, arcade.color.BLACK)
             # Draw loading bar
-            loading_bar_width = (self.weapon_manager.currentLoading / self.weapon_manager.totalLoading)
+            loading_bar_width = (
+                self.weapon_manager.currentLoading / self.weapon_manager.totalLoading)
             arcade.draw_text(f"Loading textures... {self.weapon_manager.currentLoading}/{self.weapon_manager.totalLoading} ({loading_bar_width * 100:.2f}%)",
                              self.screen_width // 2, self.screen_height // 3, arcade.color.WHITE, 12, anchor_x="center", anchor_y="center")
             # draw outline
@@ -454,7 +516,6 @@ class Game(arcade.Window):
             arcade.draw_xywh_rectangle_filled(
                 self.screen_width // 2 - 100, self.screen_height // 2 - 10, 200 * loading_bar_width, 20, arcade.color.WHITE)
             return  # Exit the draw method if textures are not loaded
-        
 
         self.clear()
         self.ctx.enable(self.ctx.DEPTH_TEST)  # Ensure depth testing is enabled
@@ -545,11 +606,13 @@ class Game(arcade.Window):
                     # Set material properties
                     if i == 2:
                         # change the color of the enemy
-                        h_factor = obj["object"].get_health() / obj["object"].get_max_health()  # Health factor for color
+                        # Health factor for color
+                        h_factor = obj["object"].get_health(
+                        ) / obj["object"].get_max_health()
                         base_color = enemy_geometry["base_color_factor"]
 
                         enemy_geometry["base_color_factor"] = (base_color[0],
-                            base_color[1], base_color[2], 0.7 * h_factor + 0.3)
+                                                               base_color[1], base_color[2], 0.7 * h_factor + 0.3)
 
                     obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
 
@@ -617,7 +680,45 @@ class Game(arcade.Window):
                 anchor_y="center",
                 bold=True,
             )
+            # Draw exit option
+            arcade.draw_text(
+                "Press ESC to Resume | Press Q to Exit",
+                self.screen_width // 2,
+                self.screen_height // 2 - 60,
+                arcade.color.LIGHT_GRAY,
+                20,
+                anchor_x="center",
+                anchor_y="center",
+            )
             return  # Skip drawing the rest of the game when paused
+
+        # Death screen
+        if hasattr(self.player, "health") and self.player.health <= 0:
+            self.clear()
+            arcade.draw_lrtb_rectangle_filled(
+                0, self.screen_width, self.screen_height, 0, (0, 0, 0, 220)
+            )
+            arcade.draw_text(
+                "YOU DIED",
+                self.screen_width // 2,
+                self.screen_height // 2 + 40,
+                arcade.color.RED,
+                56,
+                anchor_x="center",
+                anchor_y="center",
+                bold=True,
+            )
+            arcade.draw_text(
+                "Press Q to Exit",
+                self.screen_width // 2,
+                self.screen_height // 2 - 40,
+                arcade.color.LIGHT_GRAY,
+                24,
+                anchor_x="center",
+                anchor_y="center",
+            )
+            return
+        # ...existing code...
 
     def draw_UI(self):
         try:
@@ -695,9 +796,9 @@ class Game(arcade.Window):
                     center_x + offset, center_y + offset,
                     color, hitmarker_thickness
                 )
-            
+
             # WEAPON SELECTION
-            
+
             # # Draw weapon selection icons: equipped weapon left (big), unequipped right (small)
             # icon_scale_selected = 3.0
             # icon_scale_unselected = 2.2
@@ -818,8 +919,6 @@ class Game(arcade.Window):
             arcade.draw_rectangle_outline(
                 self.screen_width // 2, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.BLACK, 4)
 
-            
-
             # ========================GAME_INFO========================== #
 
             # Display camera position
@@ -871,7 +970,7 @@ class Game(arcade.Window):
                 arcade.color.WHITE,
                 12,
             )
-            
+
             # is ads
             arcade.draw_text(
                 f"Is ADS: {self.is_ADS}",
@@ -884,6 +983,9 @@ class Game(arcade.Window):
             print(f"Error drawing texture: {e}")
 
     def on_update(self, delta_time: float):
+        if self.state == "TITLE":
+            return  # Skip updating the game when on the title screen
+
         if self.is_paused:
             return  # Skip updating the game when paused
 
@@ -920,7 +1022,8 @@ class Game(arcade.Window):
             px, py, pz = -self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z
             # Simple AABB check
             if (min_x <= px <= max_x and min_y <= py <= max_y and min_z <= pz <= max_z):
-                print(f"Player entered trigger {trigger['name']} for room {trigger.get('room', 1)} at pos ({px:.2f},{py:.2f},{pz:.2f})")
+                print(
+                    f"Player entered trigger {trigger['name']} for room {trigger.get('room', 1)} at pos ({px:.2f},{py:.2f},{pz:.2f})")
                 room_num = trigger.get("room", 1)
                 if room_num not in self.activated_rooms:
                     print(f"Activating room {room_num}")
@@ -948,20 +1051,20 @@ class Game(arcade.Window):
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 3
             )
             # If all enemies in a room are dead, unlock the doors
-            
+
             for door in self.doors:
                 try:
                     if room1_dead and door["condition"] == "room1_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
-                            
+
                     elif room2_dead and door["condition"] == "room2_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
-                        
+
                     elif room3_dead and door["condition"] == "room3_dead":
-                            door["lock"] = False
-                            door["opacity"] = 0.5
+                        door["lock"] = False
+                        door["opacity"] = 0.5
                 except KeyError:
                     # If the door does not have a condition, skip it
                     continue
@@ -981,6 +1084,17 @@ class Game(arcade.Window):
                 elif distance >= 3 and obj in self.interactions:
                     self.interactions.remove(obj)
 
+        if self.is_ADS:
+            # Zoom in
+            if self.fov > 70:
+                self.fov -= 3
+            self.mouse_sensitivity = 0.0005
+        else:
+            if self.fov < 90:
+                # Zoom out
+                self.fov += 3
+            self.mouse_sensitivity = 0.001
+
         if self.HS_hitmarker:
             if self.hitmarker_timer <= self.time:
                 self.HS_hitmarker = False
@@ -989,7 +1103,7 @@ class Game(arcade.Window):
             if self.hitmarker_timer <= self.time:
                 self.hitmarker = False
                 self.hitmarker_timer = 0  # Reset the hitmarker timer
-                
+
         self.weapon_manager.update(delta_time)
 
         for obj in self.objects:
@@ -1266,6 +1380,26 @@ class Game(arcade.Window):
             self.camera_rot.x = math.pi / 2
 
     def on_key_press(self, key, modifiers):
+        if self.state == "TITLE":
+            if key == arcade.key.ENTER or key == arcade.key.RETURN:
+                self.state = "GAME"
+                return
+            else:
+                return  # Ignore other keys on title screen
+
+        # Exit from pause or death screen
+        if self.is_paused or (hasattr(self.player, "health") and self.player.health <= 0):
+            if key == arcade.key.Q:
+                arcade.exit()
+                return
+            if self.is_paused and key == arcade.key.ESCAPE:
+                self.is_paused = False
+                self.mouse_locked = True
+                self.set_mouse_visible(False)
+                self.set_exclusive_mouse(True)
+                return
+            return  # Ignore other keys while paused or dead
+
         if key == arcade.key.ESCAPE:
             self.is_paused = not self.is_paused
             self.mouse_locked = not self.is_paused
@@ -1306,7 +1440,7 @@ class Game(arcade.Window):
             self.mouse_locked = not self.mouse_locked
             self.set_mouse_visible(not self.mouse_locked)
             self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
-            
+
         elif key == arcade.key.KEY_1:
             self.weapon_manager.switch("REVOLVER")
 
@@ -1326,8 +1460,6 @@ class Game(arcade.Window):
 
         elif key == arcade.key.R:
             self.weapon_manager.reload_weapon()
-            
-
 
         elif key == arcade.key.F:
             for rays in self.debug_rays:
@@ -1353,9 +1485,11 @@ class Game(arcade.Window):
                             if door["lock"]:
                                 self.interaction_feedback = "Interacted!"
                                 self.interaction_feedback_timer = self.time + 0.7  # Show for 0.7 seconds
-                                closest_button["active"] = False  # Deactivate the button
+                                # Deactivate the button
+                                closest_button["active"] = False
                                 door["lock"] = False  # Unlock the door
-                                door["opacity"] = 0.5  # Update opacity based on lock state
+                                # Update opacity based on lock state
+                                door["opacity"] = 0.5
 
         elif key == arcade.key.Q:
             pass
@@ -1373,9 +1507,10 @@ class Game(arcade.Window):
         if self.mouse_locked:
             self.camera_rot.y += dx * self.mouse_sensitivity
             self.camera_rot.x -= dy * self.mouse_sensitivity  # Invert pitch adjustment
-            
+
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        pass  
+        pass
+
     def on_mouse_press(self, x, y, button, modifiers):
         if not self.isLoaded:
             # If textures are not loaded, skip key presses
@@ -1470,10 +1605,10 @@ class Game(arcade.Window):
                             elif raycast_result["id"] == 1 and self.debugMode:
                                 print(f"Hit wall {raycast_result['name']}!")
                             print(f"Hit: {raycast_result['name']}!")
-            else:   
+            else:
                 if self.weapon_manager.current.chamber.count(1) == 0:
                     self.weapon_manager.reload_weapon()
-                        
+
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.weapon_manager.ADS(True)
             self.is_ADS = True
@@ -1555,26 +1690,32 @@ class Game(arcade.Window):
         # Check if the buffer data has the expected number of values
         distance = 0
         if object["id"] == 1:
-            # Calculate the center of the wall by averaging all vertices' coordinates
-            positions = object["buffer_data"]
-            # Planes have 20 vertices (x, y, z, u, v)
-            num_vertices = len(positions) // 5
+            # is colloseum wall
+            if object["name"][:15] == "colosseum_wall":
+                # always far away
+                distance = 1000
+            else:
 
-            center_x = sum(positions[i * 5]
-                           for i in range(num_vertices)) / num_vertices
-            center_y = sum(positions[i * 5 + 1]
-                           for i in range(num_vertices)) / num_vertices
-            center_z = sum(positions[i * 5 + 2]
-                           for i in range(num_vertices)) / num_vertices
+                # Calculate the center of the wall by averaging all vertices' coordinates
+                positions = object["buffer_data"]
+                # Planes have 20 vertices (x, y, z, u, v)
+                num_vertices = len(positions) // 5
 
-            center = Vec3(center_x, center_y, center_z)
+                center_x = sum(positions[i * 5]
+                            for i in range(num_vertices)) / num_vertices
+                center_y = sum(positions[i * 5 + 1]
+                            for i in range(num_vertices)) / num_vertices
+                center_z = sum(positions[i * 5 + 2]
+                            for i in range(num_vertices)) / num_vertices
 
-            # Calculate the distance between the camera and the wall's center
-            distance = math.sqrt(
-                (self.camera_pos.x + center.x) ** 2 +
-                (self.camera_pos.y + center.y) ** 2 +
-                (self.camera_pos.z + center.z) ** 2
-            )
+                center = Vec3(center_x, center_y, center_z)
+
+                # Calculate the distance between the camera and the wall's center
+                distance = math.sqrt(
+                    (self.camera_pos.x + center.x) ** 2 +
+                    (self.camera_pos.y + center.y) ** 2 +
+                    (self.camera_pos.z + center.z) ** 2
+                )
         elif object["id"] == 2:
             # Calculate the center of the door by averaging all vertices' coordinates
             positions = object["buffer_data"]
@@ -1691,18 +1832,17 @@ class Game(arcade.Window):
         self.objects.append(self.exit_portal)
 
         # Initialize the enemy list
-        self.enemies = self.levels[level - 1].get_Enemies(self, self.GLTF_program)
+        self.enemies = self.levels[level -
+                                   1].get_Enemies(self, self.GLTF_program)
 
         self.enemy1_gltf = GLTF2().load(self.enemy1_path[0])
         self.enemy2_gltf = GLTF2().load(self.enemy2_path[0])
-
 
         with open(self.enemy1_path[1], "rb") as f:
             self.enemy1_bin_data = f.read()
 
         with open(self.enemy2_path[1], "rb") as f:
             self.enemy2_bin_data = f.read()
-
 
         # Room triggers
         self.room_triggers = self.levels[level - 1].room_triggers()
@@ -1740,4 +1880,3 @@ class Game(arcade.Window):
         self.camera_rot = Vec3(0, 0, 0)
         self.is_on_ground = True
         self.movement_vector = self.forward.scale(self.current_speed)
-

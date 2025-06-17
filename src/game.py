@@ -941,26 +941,30 @@ class Game(arcade.Window):
             room1_dead = all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 1
             )
-            
             room2_dead = all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 2
             )
             room3_dead = all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 3
             )
-            if room1_dead or room2_dead or room3_dead:
-                for door in self.doors:
-                        if room1_dead and door["condition"] == "room1_dead":
-                            door["lock"] = False
-                            door["opacity"] = 0.5
+            # If all enemies in a room are dead, unlock the doors
+            
+            for door in self.doors:
+                try:
+                    if room1_dead and door["condition"] == "room1_dead":
+                        door["lock"] = False
+                        door["opacity"] = 0.5
                             
-                        elif room2_dead and door["condition"] == "room2_dead":
-                            door["lock"] = False
-                            door["opacity"] = 0.5
+                    elif room2_dead and door["condition"] == "room2_dead":
+                        door["lock"] = False
+                        door["opacity"] = 0.5
                         
-                        elif room3_dead and door["condition"] == "room3_dead":
+                    elif room3_dead and door["condition"] == "room3_dead":
                             door["lock"] = False
                             door["opacity"] = 0.5
+                except KeyError:
+                    # If the door does not have a condition, skip it
+                    continue
         except Exception as e:
             pass  # Ignore errors if no enemies are present
 
@@ -1641,7 +1645,7 @@ class Game(arcade.Window):
                             self, self.enemy2_gltf, self.enemy2_bin_data, scale=Vec3(3, 3, 3))
                     elif enemy["type"] == 3:
                         enemy["geometry"] = gltf_utils.load_gltf(
-                            self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(2, 1, 2))
+                            self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(1.2, 0.7, 1.2))
 
     def load_level(self, level):
         self.isLoaded = False

@@ -283,32 +283,92 @@ def get_walls():
             "name": "wall_028",
             "buffer_data": [
                 # Position         UV
-                6, -2, 78,       0, uv,  # Bottom Left
-                6, 6, 78,        0, 0,   # Top Left
-                18, -2, 78,        uv, uv,  # Bottom Right
-                18, 6, 78,         uv, 0,  # Top Right
+                18, -2, 78,       0, uv,  # Bottom Left
+                18, 6, 78,        0, 0,   # Top Left
+                18, -2, 90,        uv, uv,  # Bottom Right
+                18, 6, 90,         uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_029",
             "buffer_data": [
                 # Position         UV
-                -6, -2, 78,       0, uv,  # Bottom Left
-                -6, 6, 78,        0, 0,   # Top Left
-                -18, -2, 78,        uv, uv,  # Bottom Right
-                -18, 6, 78,         uv, 0,  # Top Right
+                -18, -2, 78,       0, uv,  # Bottom Left
+                -18, 6, 78,        0, 0,   # Top Left
+                -18, -2, 90,        uv, uv,  # Bottom Right
+                -18, 6, 90,         uv, 0,  # Top Right
             ],
         },
         {
             "name": "wall_030",
             "buffer_data": [
                 # Position         UV
-                6, -2, 78,       0, uv,  # Bottom Left
-                6, 6, 78,        0, 0,   # Top Left
-                -6, -2, 78,        uv, uv,  # Bottom Right
-                -6, 6, 78,         uv, 0,  # Top Right
+                6, -2, 90,       0, uv,  # Bottom Left
+                6, 6, 90,        0, 0,   # Top Left
+                18, -2, 90,        uv, uv,  # Bottom Right
+                18, 6, 90,         uv, 0,  # Top Right
             ],
-        }
+        },
+        {
+            "name": "wall_031",
+            "buffer_data": [
+                # Position         UV
+                -6, -2, 90,       0, uv,  # Bottom Left
+                -6, 6, 90,        0, 0,   # Top Left
+                -18, -2, 90,        uv, uv,  # Bottom Right
+                -18, 6, 90,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_032",
+            "buffer_data": [
+                # Position         UV
+                6, -2, 90,       0, uv,  # Bottom Left
+                6, 6, 90,        0, 0,   # Top Left
+                -6, -2, 90,        uv, uv,  # Bottom Right
+                -6, 6, 90,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_033",
+            "buffer_data": [
+                # Position         UV
+                -18, -2, -18,       0, uv,  # Bottom Left
+                -18, 6, -18,        0, 0,   # Top Left
+                -18, -2, -30,        uv, uv,  # Bottom Right
+                -18, 6, -30,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_034",
+            "buffer_data": [
+                # Position         UV
+                18, -2, -18,       0, uv,  # Bottom Left
+                18, 6, -18,        0, 0,   # Top Left
+                18, -2, -30,        uv, uv,  # Bottom Right
+                18, 6, -30,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_035",
+            "buffer_data": [
+                # Position         UV
+                -18, -2, -42,       0, uv,  # Bottom Left
+                -18, 6, -42,        0, 0,   # Top Left
+                -18, -2, -30,        uv, uv,  # Bottom Right
+                -18, 6, -30,         uv, 0,  # Top Right
+            ],
+        },
+        {
+            "name": "wall_036",
+            "buffer_data": [
+                # Position         UV
+                18, -2, -18,       0, uv,  # Bottom Left
+                18, 6, -18,        0, 0,   # Top Left
+                18, -2, -42,        uv, uv,  # Bottom Right
+                18, 6, -42,         uv, 0,  # Top Right
+            ],
+        },
     ]
     return walls
 
@@ -360,7 +420,99 @@ def get_enemy_walls():
 
 def get_Enemies(game, program):
     enemies = [
-        
+        # FIRST ROOM ENEMIES
+        {
+            "name": "enemy1_001",
+            "type": 1,
+            "room": 1,
+            "object": enemy.Enemy1(game, get_walls(), get_enemy_walls(), Vec3(0, -2, 24), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy1_002",
+            "type": 1,
+            "room": 1,
+            "object": enemy.Enemy1(game, get_walls(), get_enemy_walls(), Vec3(0, -2, 36), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy1_003",
+            "type": 1,
+            "room": 1,
+            "object": enemy.Enemy1(game, get_walls(), get_enemy_walls(), Vec3(9, -2, 36), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy1_004",
+            "type": 1,
+            "room": 1,
+            "object": enemy.Enemy1(game, get_walls(), get_enemy_walls(), Vec3(-9, -2, 36), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy1_005",
+            "type": 1,
+            "room": 1,
+            "object": enemy.Enemy1(game, get_walls(), get_enemy_walls(), Vec3(0, -2, 48), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy2_001",
+            "type": 2,
+            "room": 1,
+            "object": enemy.Enemy2(game, get_walls(), get_enemy_walls(), Vec3(9, -2, 48), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy2_002",
+            "type": 2,
+            "room": 1,
+            "object": enemy.Enemy2(game, get_walls(), get_enemy_walls(), Vec3(-9, -2, 48), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy2_003",
+            "type": 2,
+            "room": 1,
+            "object": enemy.Enemy2(game, get_walls(), get_enemy_walls(), Vec3(-12, -2, 60), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        {
+            "name": "enemy2_003",
+            "type": 2,
+            "room": 1,
+            "object": enemy.Enemy2(game, get_walls(), get_enemy_walls(), Vec3(12, -2, 60), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        # SECOND ROOM ENEMIES
+        {
+            "name": "enemy3_001",
+            "type": 3,
+            "room": 2,
+            "object": enemy.Enemy3(game, get_walls(), get_enemy_walls(), Vec3(0, -2, 82), 100, Vec3(0, 0, 0)),
+            "program": program,
+            "id": 10,
+            "rotation": Vec3(0, 0, 0),
+        },
+        # THIRD ROOM ENEMIES
         
     ]
     return enemies
@@ -371,14 +523,14 @@ def get_buttons(program):
             "name": "button_001",
             "id": 20,
             "program": program,
-            "position": Vec3(24, -2, 0),
+            "position": Vec3(0, -2, 88),
             "rotation": Vec3(0, 0, 0),
             "active": True,
             "action": "open_door",
             "target": "red_door_001"
         }
     ]
-    return []
+    return buttons
 
 def room_triggers():
     """Get the room triggers for the level.
@@ -389,10 +541,10 @@ def room_triggers():
             "name": "room_trigger_001",
             "buffer_data": [
                 # Position         UV
-                -6, -2, -18,       0, 1,  # Bottom Left
-                -6, 6, -18,        0, 0,   # Top Left
-                6, -2, -18,        1, 1,  # Bottom Right
-                6, 6, -18,         1, 0,  # Top Right
+                -18, -2, 8,       0, 1,  # Bottom Left
+                -18, 6, 8,        0, 0,   # Top Left
+                18, -2, 8,        1, 1,  # Bottom Right
+                18, 6, 8,         1, 0,  # Top Right
             ],
             "room": 1,
         },
@@ -400,26 +552,26 @@ def room_triggers():
             "name": "room_trigger_002",
             "buffer_data": [
                 # Position         UV
-                -16, -2, -42,       0, 1,  # Bottom Left
-                -16, 6, -42,        0, 0,   # Top Left
-                -14, -2, -30,       1, 1,  # Bottom Right
-                -14, 6, -30,        1, 0,  # Top Right
+                -6, -2, 68,       0, 1,  # Bottom Left
+                -6, 6, 68,        0, 0,   # Top Left
+                 6, -2, 68,        1, 1,  # Bottom Right
+                 6, 6, 68,         1, 0,  # Top Right
             ],
             "room": 2,
         },
         {
             "name": "room_trigger_003",
             "buffer_data": [
-                # Position         UV
-                -42, -2, -45,       0, 1,  # Bottom Left
-                -42, 6, -45,        0, 0,   # Top Left
-                -30, -2, -45,       1, 1,  # Bottom Right
-                -30, 6, -45,        1, 0,  # Top Right
+                 # Position         UV
+                -6, -2, -20,       0, 1,  # Bottom Left
+                -6, 6, -20,        0, 0,   # Top Left
+                6, -2, -20,        1, 1,  # Bottom Right
+                6, 6, -20,         1, 0,  # Top Right
             ],
             "room": 3,
         }
     ]
-    return []
+    return triggers
     
 
 def get_exit():

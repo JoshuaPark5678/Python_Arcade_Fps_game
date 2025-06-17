@@ -100,22 +100,14 @@ class Revolver(Weapon):
 
         # draw the cylinder bullets (5 bullets)
         angle = 360 / 5
-        chamber = self.chamber[:5] + [0] * (5 - len(self.chamber))
-        back_cycle = 90
-        if self.current_frame > 0:
-            back_cycle = 162
-        cylinder_spin = self.cylinder_spin
+        back_cycle = 90 if self.current_frame < 1 else 162
+        # The top chamber (to fire) is always chamber[0], then chamber[1], ...
         for i in range(5):
-            bullet_angle = math.radians(
-                angle * i) + math.radians(back_cycle) - math.radians(cylinder_spin)
-            bullet_x = center[0] + cylinder_radius // 2 * \
-                math.cos(bullet_angle)
-            bullet_y = center[1] + cylinder_radius // 2 * \
-                math.sin(bullet_angle)
-
-            chamber_index = int(i - ((self.cylinder_spin) // angle) % 5)
-            # Adjust index based on cylinder spin
-            bullet = chamber[chamber_index]
+            bullet_angle = math.radians(angle * i + back_cycle - self.cylinder_spin)
+            bullet_x = center[0] + cylinder_radius // 2 * math.cos(bullet_angle)
+            bullet_y = center[1] + cylinder_radius // 2 * math.sin(bullet_angle)
+            # Visual chamber order: top is chamber[0], then [1], ...
+            bullet = self.chamber[i] if i < len(self.chamber) else 0
             if bullet == 1:
                 arcade.draw_circle_filled(
                     bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
@@ -274,7 +266,7 @@ class Revolver(Weapon):
             # Animate the cylinder spin smoothly over the first few frames of the shot
             if self.current_frame >= 3 and self.cylinder_spin < self.spin_aim:
                 self.cylinder_spin += 6
-                print("Cylinder spin:", self.cylinder_spin)
+                # print("Cylinder spin:", self.cylinder_spin)
             elif self.current_frame > 12:
                 self.cylinder_spin = self.spin_aim
             # Reset the spin if it exceeds 360 degrees
@@ -512,6 +504,40 @@ class WeaponManager:
         self.current.update(delta_time)
 
     def draw(self):
+        # Draw weapon icons in the UI (bottom left corner)
+        icon_size_selected = 96
+        icon_size_unselected = 64
+        padding = 24
+        base_x = padding + icon_size_selected // 2
+        base_y = padding + icon_size_selected // 2
+        
+        # Make shotgun icon longer (wider)
+        shotgun_selected_width = int(icon_size_selected * 1.5)
+        shotgun_unselected_width = int(icon_size_unselected * 1.5)
+        shotgun_selected_height = icon_size_selected
+        shotgun_unselected_height = icon_size_unselected
+        
+        # Draw revolver icon
+        if self.current.type == "REVOLVER":
+            # Selected revolver
+            arcade.draw_texture_rectangle(
+                base_x, base_y, icon_size_selected, icon_size_selected, self.game.revolver_icon, alpha=255
+            )
+            # Unselected shotgun (longer)
+            arcade.draw_texture_rectangle(
+                base_x + icon_size_selected + padding, base_y, shotgun_unselected_width, shotgun_unselected_height, self.game.shotgun_icon, alpha=180
+            )
+        else:
+            # Unselected revolver
+            arcade.draw_texture_rectangle(
+                base_x, base_y, icon_size_unselected, icon_size_unselected, self.game.revolver_icon, alpha=180
+            )
+            # Selected shotgun (longer)
+            arcade.draw_texture_rectangle(
+                base_x + icon_size_selected + padding, base_y, shotgun_selected_width, shotgun_selected_height, self.game.shotgun_icon, alpha=255
+            )
+        
+        # Draw the current weapon (main view)
         self.current.draw()
 
     def setup_weapon_textures(self):

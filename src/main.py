@@ -12,5 +12,6 @@ To get dependancies:
 3. Paste:
 pip install arcade==2.6.17
 pip install numpy
-pip install pygltflib    
+pip install pygltflib
+pip install moderngl
 """

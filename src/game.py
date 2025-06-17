@@ -59,10 +59,11 @@ class Game(arcade.Window):
         arcade.get_window().set_icon(self.icon)
 
         self.levels = [
-            level5,
+            
             level1,
             level2,
-            level3
+            level3,
+            level5,
         ]
 
         # debug variable
@@ -483,7 +484,7 @@ class Game(arcade.Window):
                 self.screen_width // 2,
                 self.screen_height // 2 - 20,
                 (220, 220, 220, enter_alpha),
-                26,
+                26 + (self.time % 4) // 2,  # Pulsing size
                 anchor_x="center",
                 anchor_y="center",
                 font_name="Kenney Future"
@@ -1050,6 +1051,10 @@ class Game(arcade.Window):
             room3_dead = all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 3
             )
+            room4_dead = all(
+                enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 4
+            )
+            # print(f"Enemies in Room 1 Dead: {room1_dead}, Room 2 Dead: {room2_dead}, Room 3 Dead: {room3_dead}, Room 4 Dead: {room4_dead}")
             # If all enemies in a room are dead, unlock the doors
 
             for door in self.doors:
@@ -1057,12 +1062,17 @@ class Game(arcade.Window):
                     if room1_dead and door["condition"] == "room1_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
+                        
 
                     elif room2_dead and door["condition"] == "room2_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
 
                     elif room3_dead and door["condition"] == "room3_dead":
+                        door["lock"] = False
+                        door["opacity"] = 0.5
+                    
+                    elif room4_dead and door["condition"] == "room4_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
                 except KeyError:

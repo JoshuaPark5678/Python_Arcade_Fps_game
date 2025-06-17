@@ -486,7 +486,7 @@ class Enemy3(Enemy):
         # 3x tankier than Enemy1 (default health=100)
         super().__init__(game, walls, enemy_walls, position, health, rotation)
         self.speed = 0.02
-        self.normal_speed = 0.05  # Store normal speed
-        self.slow_speed = 0.05   # Same as normal speed
-        self.health = 500  # Increased health
-        self.max_health = 500
+        self.normal_speed = 0.1  # Store normal speed
+        self.slow_speed = 0.1   # Same as normal speed
+        self.health = 300  # Increased health
+        self.max_health = 300

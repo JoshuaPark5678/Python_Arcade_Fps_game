@@ -333,6 +333,7 @@ def get_doors(program):
             "program": program,  # Use the passed program
             "texture": 3,
             "opacity": .9,
+            "condition": "room1_dead",
             "buffer_data": [
                 # Position         UV
                 16, -2, -4,       0, 1,  # Bottom Left
@@ -364,18 +365,22 @@ def get_enemy_walls():
     return walls
 
 
-def get_Enemies(player, program):
+def get_Enemies(game, program):
     enemies = [
         {
             "name": "enemy1_001",
-            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -30), 100, Vec3(0, 0, 0)),
+            "type": 1,
+            "room": 1,
+            "object": enemy.Enemy1(game, get_walls(), get_enemy_walls(), Vec3(35, -2, -30), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "rotation": Vec3(0, 0, 0),
         },
         {
             "name": "enemy1_002",
-            "object": enemy.Enemy(player, get_walls(), get_enemy_walls(), Vec3(35, -2, -20), 100, Vec3(0, 0, 0)),
+            "type": 1,
+            "room": 1,
+            "object": enemy.Enemy1(game, get_walls(), get_enemy_walls(), Vec3(35, -2, -20), 100, Vec3(0, 0, 0)),
             "program": program,
             "id": 10,
             "rotation": Vec3(0, 0, 0),
@@ -383,6 +388,24 @@ def get_Enemies(player, program):
     ]
     return enemies
 
+def room_triggers():
+    """Get the room triggers for the level.
+    These are used to change the room when the player enters a specific area.
+    """
+    triggers = [
+        {
+            "name": "room_trigger_001",
+            "buffer_data": [
+                # Position         UV
+                -6, -2, -35,       0, 1,  # Bottom Left
+                -6, 6, -35,        0, 0,   # Top Left
+                6, -2, -35,        1, 1,  # Bottom Right
+                6, 6, -35,         1, 0,  # Top Right
+            ],
+            "room": 1,
+        },
+    ]
+    return triggers
 
 def get_buttons(program):
     buttons = [
@@ -393,5 +416,6 @@ def get_exit():
     exit = {
         "name": "exit_001",
         "model": Vec3(10, 1, 2),
+        "destination": 2,
     }
     return exit

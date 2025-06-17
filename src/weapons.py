@@ -116,7 +116,6 @@ class Revolver(Weapon):
             chamber_index = int(i - ((self.cylinder_spin) // angle) % 5)
             # Adjust index based on cylinder spin
             bullet = chamber[chamber_index]
-            print("Top bullet:", bullet)
             if bullet == 1:
                 arcade.draw_circle_filled(
                     bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
@@ -209,7 +208,7 @@ class Revolver(Weapon):
 
         if self.in_reload:
             self.time_since_last_frame += delta_time
-            if self.time_since_last_frame >= self.animation_speed:
+            if self.time_since_last_frame >= self.animation_speed - 0.01:
                 self.reload_frame += 1
                 if self.reload_frame >= len(self.reload_textures):
                     self.in_reload = False

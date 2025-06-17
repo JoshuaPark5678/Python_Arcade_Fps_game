@@ -17,6 +17,7 @@ import threading
 # ----- LEVELS ----- #
 import level1
 import level2
+import level3
 
 # ----- UTILS ----- #
 import gltf_utils
@@ -57,14 +58,19 @@ class Game(arcade.Window):
         arcade.get_window().set_icon(self.icon)
 
         self.levels = [
+            level3,
             level1,
-            level2
+            level2,
+            level3
         ]
 
         # debug variable
         self.debugVal = 0
         self.debugMode = False  # Debug mode flag
-
+        
+        # set frame rate
+        self.set_update_rate(1/60)
+        
         # SCREEN DIMENSIONS
         self.screen_width = SCREEN_WIDTH
         self.screen_height = SCREEN_HEIGHT
@@ -282,10 +288,10 @@ class Game(arcade.Window):
                 'f',
                 [
                     # Position         UV
-                    -100, -2, 50,       0, 100,  # Top Left
-                    -100, -2, -150,      0, 0,   # Bottom Left
-                    100, -2, 50,        100, 100,  # Top Right
-                    100, -2, -150,       100, 0,  # Bottom Right
+                    -100, -2, 100,       0, 150,  # Top Left
+                    -100, -2, -200,      0, 0,   # Bottom Left
+                    100, -2, 100,        100, 150,  # Top Right
+                    100, -2, -200,       100, 0,  # Bottom Right
                 ]
             )
 
@@ -293,10 +299,10 @@ class Game(arcade.Window):
                 'f',
                 [
                     # Position         UV
-                    -100, 6, 50,       0, 100,  # Top Left
-                    -100, 6, -150,      0, 0,   # Bottom Left
-                    100, 6, 50,        100, 100,  # Top Right
-                    100, 6, -150,       100, 0,  # Bottom Right
+                    -100, 6, 100,       0, 150,  # Top Left
+                    -100, 6, -200,      0, 0,   # Bottom Left
+                    100, 6, 100,        150, 150,  # Top Right
+                    100, 6, -200,       150, 0,  # Bottom Right
                 ]
             )
         
@@ -341,6 +347,9 @@ class Game(arcade.Window):
 
         self.enemy1_path = [f"{self.file_dir}/models/crazy_boy_noarm.gltf",
                             f"{self.file_dir}/models/crazy_boy_noarm.bin"]
+        
+        self.enemy2_path = [f"{self.file_dir}/models/tall_guy.gltf",
+                            f"{self.file_dir}/models/tall_guy.bin"]
 
         self.button_path = [f"{self.file_dir}/models/button.gltf",
                             f"{self.file_dir}/models/button.bin"]
@@ -502,13 +511,15 @@ class Game(arcade.Window):
                 self.exit_portal["program"]["time"] = self.time * 2
                 self.exit_portal["program"]["projection"] = self.proj
                 self.exit_portal["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z
-                self.exit_portal["geometry"].render(
+                obj["geometry"].render(
                     self.exit_portal["program"])
             elif obj["id"] == 4:
-                # Render projectiles
+                # Render projectiles relative to player and camera rotation
                 obj["program"]["projection"] = self.proj
-                obj["program"]["model"] = Mat4.from_translation(Vec3(
-                    obj["model"].x, obj["model"].y, obj["model"].z)) @ rotate_y @ rotate_x  # Correctly set the model matrix
+                obj["program"]["model"] = (
+                    translate @ Mat4.from_translation(Vec3(
+                        obj["model"].x, obj["model"].y, obj["model"].z)) @ rotate_y @ rotate_x @ rotate_z
+                )
                 obj["geometry"].render(obj["program"])
 
             # Render the enemy object
@@ -570,10 +581,23 @@ class Game(arcade.Window):
                     button_geometry["geometry"].render(obj["program"])
 
         for ray_start, ray_end, color, timestamp in self.debug_rays:
-
+            # Create a buffer for the line's two endpoints
+            line_buffer = self.ctx.buffer(data=array('f', [
+                ray_start.x, ray_start.y, ray_start.z,
+                ray_end.x, ray_end.y, ray_end.z,
+            ]))
+            line_geometry = self.ctx.geometry(
+                content=[BufferDescription(line_buffer, "3f", ("in_pos",))],
+                mode=self.ctx.LINES,
+            )
+            self.line_program["projection"] = self.proj
+            # Identity
+            self.line_program["model"] = translate @ rotate_y @ rotate_x @ rotate_z
+            self.line_program["color"] = color  # Set the color for the line
+            line_geometry.render(self.line_program)
             # remove the exprired rays
-            if self.time - timestamp > 0.5:  # Remove rays older than 0.5 seconds
-                self.debug_rays.remove((ray_start, ray_end, color, timestamp))
+            # if self.time - timestamp > 0.5:  # Remove rays older than 0.5 seconds
+            #     self.debug_rays.remove((ray_start, ray_end, color, timestamp))
 
         # draw UI
         self.draw_UI()
@@ -597,79 +621,9 @@ class Game(arcade.Window):
 
     def draw_UI(self):
         try:
-            # ==========================UI========================= #
-            # =======================WEAPON======================== #
 
             self.weapon_manager.draw()
-                
-            # ========================AMMO========================== #
-            
-            # if self.arsenal[0] == "REVOLVER":
-            # # display CYLINDER
-            #     cylinder_radius = self.screen_width // 10
-            #     if self.revolver_current_frame < 8:
-            #         cylinder_radius += self.revolver_current_frame // 2
-            #     else:
-            #         cylinder_radius -= (self.revolver_current_frame - 8) // 2
 
-            #     # center of the cylinder
-            #     center = [self.screen_width -
-            #             cylinder_radius // 2, cylinder_radius // 2]
-
-            #     # Draw the cylinder body
-            #     arcade.draw_circle_filled(
-            #         center[0], center[1], cylinder_radius, (45, 45, 55))
-            #     arcade.draw_circle_filled(
-            #         center[0], center[1], cylinder_radius // 1.2, arcade.color.GRAY)
-            #     arcade.draw_circle_outline(
-            #         center[0], center[1], cylinder_radius, arcade.color.BLACK, 4
-            #     )
-            #     # draw the cylinder middle thingy
-            #     arcade.draw_circle_filled(
-            #         center[0], center[1], cylinder_radius // 6, (55, 55, 65))
-            #     arcade.draw_circle_outline(
-            #         center[0], center[1], cylinder_radius // 6, arcade.color.BLACK, 4)
-
-            #     # draw the cylinder bullets (5 bullets)
-            #     angle = 360 / 5
-
-            #     # chamber is self.chamber's first 5 elements.
-            #     # If self.chamber length is less than 5, fill the rest with 0
-            #     chamber = self.chamber[:5] + [0] * (5 - len(self.chamber))
-            #     # all bullets that are > 0
-            #     ammo = len([bullet for bullet in chamber if bullet > 0])
-            #     back_cycle = 90
-            #     if self.revolver_current_frame > 0:
-            #         # If the revolver is in the shooting animation
-            #         back_cycle = 162
-
-            #     for i in range(5):
-            #         # Calculate the position of each bullet
-            #         bullet_angle = math.radians(
-            #             angle * i) + math.radians(back_cycle) - math.radians(self.cylinder_spin)
-            #         # Calculate the bullet's position based on the angle
-            #         bullet_x = center[0] + \
-            #             cylinder_radius // 2 * math.cos(bullet_angle)
-            #         bullet_y = center[1] + \
-            #             cylinder_radius // 2 * math.sin(bullet_angle)
-
-            #         # Draw the bullet starting from the top of the cylinder
-            #         top_bullet = chamber[i - (self.cylinder_spin // 72) % 5]
-            #         if top_bullet == 1:
-            #             arcade.draw_circle_filled(
-            #                 bullet_x, bullet_y, cylinder_radius // 6, arcade.color.DARK_GRAY)
-            #         elif top_bullet == 2:
-            #             arcade.draw_circle_filled(
-            #                 bullet_x, bullet_y, cylinder_radius // 6, arcade.color.GOLD)
-            #         else:
-            #             arcade.draw_circle_filled(
-            #                 bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK)
-
-            #         # Draw the bullet outline
-            #         arcade.draw_circle_outline(
-            #             bullet_x, bullet_y, cylinder_radius // 6, arcade.color.BLACK, 2)
-            
-                
             # ======================CROSSHAIR====================== #
 
             # draw crosshair that has inverse color from the background
@@ -870,7 +824,7 @@ class Game(arcade.Window):
 
             # Display camera position
             arcade.draw_text(
-                f"Camera Position: ({self.camera_pos.x:.6f}, {self.camera_pos.y:.6f}, {self.camera_pos.z:.6f})",
+                f"Camera Position: ({-self.camera_pos.x:.6f}, {-self.camera_pos.y:.6f}, {-self.camera_pos.z:.6f})",
                 10,
                 self.screen_height - 20,
                 arcade.color.WHITE,
@@ -949,6 +903,30 @@ class Game(arcade.Window):
         self.set_mouse_visible(not self.mouse_locked)
         self.set_exclusive_mouse(self.mouse_locked)
 
+        # Check for player collision with room triggers (AABB, with z thickness)
+        for trigger in getattr(self, 'room_triggers', []):
+            positions = trigger["buffer_data"]
+            num_vertices = len(positions) // 5
+            min_x = min(positions[i * 5] for i in range(num_vertices))
+            max_x = max(positions[i * 5] for i in range(num_vertices))
+            min_y = min(positions[i * 5 + 1] for i in range(num_vertices))
+            max_y = max(positions[i * 5 + 1] for i in range(num_vertices))
+            min_z = min(positions[i * 5 + 2] for i in range(num_vertices))
+            max_z = max(positions[i * 5 + 2] for i in range(num_vertices))
+            # Expand z bounds for a thicker trigger box
+            min_z -= 2
+            max_z += 2
+            # Player position (camera)
+            px, py, pz = -self.camera_pos.x, -self.camera_pos.y, -self.camera_pos.z
+            # Simple AABB check
+            if (min_x <= px <= max_x and min_y <= py <= max_y and min_z <= pz <= max_z):
+                print(f"Player entered trigger {trigger['name']} for room {trigger.get('room', 1)} at pos ({px:.2f},{py:.2f},{pz:.2f})")
+                room_num = trigger.get("room", 1)
+                if room_num not in self.activated_rooms:
+                    print(f"Activating room {room_num}")
+                    self.activate_room(room_num)
+                    self.activated_rooms.add(room_num)
+
         enemy_count = 0  # Count the number of enemies
         for obj in self.objects:
             if obj["id"] == 10:
@@ -958,12 +936,33 @@ class Game(arcade.Window):
                 else:
                     enemy_count += 1
 
-        if enemy_count == 0:
-            for door in self.doors:
-                if door["name"] == "door_001":
-                    # Unlock the door if all enemies are defeated
-                    door["lock"] = False
-                    door["opacity"] = 0.5  # Update opacity based on lock state
+        try:
+            # Check if all enemies are dead
+            room1_dead = all(
+                enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 1
+            )
+            
+            room2_dead = all(
+                enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 2
+            )
+            room3_dead = all(
+                enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 3
+            )
+            if room1_dead or room2_dead or room3_dead:
+                for door in self.doors:
+                        if room1_dead and door["condition"] == "room1_dead":
+                            door["lock"] = False
+                            door["opacity"] = 0.5
+                            
+                        elif room2_dead and door["condition"] == "room2_dead":
+                            door["lock"] = False
+                            door["opacity"] = 0.5
+                        
+                        elif room3_dead and door["condition"] == "room3_dead":
+                            door["lock"] = False
+                            door["opacity"] = 0.5
+        except Exception as e:
+            pass  # Ignore errors if no enemies are present
 
         # if close to a button, add it to the interactions list
         for obj in self.objects:
@@ -993,10 +992,22 @@ class Game(arcade.Window):
             if obj["id"] == 4:
                 # Update the projectile's position based on its velocity
                 obj["model"] = obj["model"] + obj["velocity"]
+                # Check collision with player (simple sphere distance check)
+                player_world_pos = -self.camera_pos
+                proj_pos = obj["model"]
+                distance = math.sqrt(
+                    (player_world_pos.x - proj_pos.x) ** 2 +
+                    (player_world_pos.y - proj_pos.y) ** 2 +
+                    (player_world_pos.z - proj_pos.z) ** 2
+                )
+                if distance < 1.0:  # Adjust radius as needed
+                    self.player.apply_damage(1)  # Deal 1 damage
+                    self.objects.remove(obj)
+                    continue
                 # Check if the projectile is out of bounds and remove it
-                if (obj["model"].x < -100 or obj["model"].x > 100 or
-                        obj["model"].y < -100 or obj["model"].y > 100 or
-                        obj["model"].z < -100 or obj["model"].z > 100) or obj["model"].y < -2:
+                if (obj["model"].x < -200 or obj["model"].x > 200 or
+                        obj["model"].y < -200 or obj["model"].y > 200 or
+                        obj["model"].z < -200 or obj["model"].z > 200) or obj["model"].y < -2:
                     self.objects.remove(obj)
             elif obj["id"] == 10:  # Assuming this is the enemy object
 
@@ -1028,7 +1039,12 @@ class Game(arcade.Window):
             if distance_to_exit < portal_radius:
                 # Player has entered the exit portal
                 print("You have exited the level!")
-                self.exit_level()
+                # Use destination if present, otherwise default to next level
+                dest = self.exit_portal.get("destination")
+                if dest is not None:
+                    self.change_level(dest)
+                else:
+                    self.exit_level()
 
         rotation_y = self.camera_rot.y
 
@@ -1394,13 +1410,13 @@ class Game(arcade.Window):
                             print("Hit enemy!")
                             if hs:
                                 raycast_result["object"].apply_damage(
-                                    20)  # Apply 20 damage for headshot
+                                    60)  # Apply 20 damage for headshot
                                 print("Headshot!")
                                 self.HS_hitmarker = True
                                 self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
                             else:
                                 raycast_result["object"].apply_damage(
-                                    10)  # Apply 10 damage if no headshot
+                                    30)  # Apply 10 damage if no headshot
                                 self.hitmarker = True
                                 self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
                         elif raycast_result["id"] == 1 and self.debugMode:
@@ -1415,9 +1431,9 @@ class Game(arcade.Window):
                     )
                     for _ in range(5):  # Shoot 5 pellets
                         # Add random bloom to the direction
-                        bloom_x = random.uniform(-0.08, 0.08)
-                        bloom_y = random.uniform(-0.08, 0.08)
-                        bloom_z = random.uniform(-0.08, 0.08)
+                        bloom_x = random.uniform(-0.04, 0.04)
+                        bloom_y = random.uniform(-0.04, 0.04)
+                        bloom_z = random.uniform(-0.04, 0.04)
                         ray_direction = Vec3(
                             math.sin(self.camera_rot.y) + bloom_x,
                             -math.sin(self.camera_rot.x) + bloom_y,
@@ -1439,17 +1455,20 @@ class Game(arcade.Window):
                             if raycast_result["id"] == 10:
                                 print("Hit enemy!")
                                 if hs:
-                                    raycast_result["object"].apply_damage(10)
+                                    raycast_result["object"].apply_damage(20)
                                     print("Headshot!")
                                     self.HS_hitmarker = True
                                     self.hitmarker_timer = self.time + 0.2
                                 else:
-                                    raycast_result["object"].apply_damage(5)
+                                    raycast_result["object"].apply_damage(10)
                                     self.hitmarker = True
                                     self.hitmarker_timer = self.time + 0.2
                             elif raycast_result["id"] == 1 and self.debugMode:
                                 print(f"Hit wall {raycast_result['name']}!")
                             print(f"Hit: {raycast_result['name']}!")
+            else:   
+                if self.weapon_manager.current.chamber.count(1) == 0:
+                    self.weapon_manager.reload_weapon()
                         
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.weapon_manager.ADS(True)
@@ -1608,6 +1627,22 @@ class Game(arcade.Window):
 
         return distance
 
+    def activate_room(self, room_number):
+        # Only add enemies for the given room if not already present
+        for enemy in self.enemies:
+            if enemy.get("room", 1) == room_number and enemy not in self.objects:
+                self.objects.append(enemy)
+                if "geometry" not in enemy:
+                    if enemy["type"] == 1:
+                        enemy["geometry"] = gltf_utils.load_gltf(
+                            self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.6, 0.6, 0.6))
+                    elif enemy["type"] == 2:
+                        enemy["geometry"] = gltf_utils.load_gltf(
+                            self, self.enemy2_gltf, self.enemy2_bin_data, scale=Vec3(3, 3, 3))
+                    elif enemy["type"] == 3:
+                        enemy["geometry"] = gltf_utils.load_gltf(
+                            self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(2, 1, 2))
+
     def load_level(self, level):
         self.isLoaded = False
         # Load the level data from a file or other source
@@ -1652,33 +1687,32 @@ class Game(arcade.Window):
         self.objects.append(self.exit_portal)
 
         # Initialize the enemy list
-        self.enemies = self.levels[level -
-                                   1].get_Enemies(self.player, self.GLTF_program)
+        self.enemies = self.levels[level - 1].get_Enemies(self, self.GLTF_program)
 
         self.enemy1_gltf = GLTF2().load(self.enemy1_path[0])
+        self.enemy2_gltf = GLTF2().load(self.enemy2_path[0])
+
 
         with open(self.enemy1_path[1], "rb") as f:
             self.enemy1_bin_data = f.read()
 
-        # Add the enemy to the list of objects
-        for enemy in self.enemies:
-            self.objects.append(enemy)
-            enemy["geometry"] = gltf_utils.load_gltf(
-                self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(0.6, 0.6, 0.6))
+        with open(self.enemy2_path[1], "rb") as f:
+            self.enemy2_bin_data = f.read()
+
+
+        # Room triggers
+        self.room_triggers = self.levels[level - 1].room_triggers()
+        self.activated_rooms = set()
 
         # get buttons
         self.buttons = self.levels[level - 1].get_buttons(self.GLTF_program)
-
         self.button_gltf = GLTF2().load(self.button_path[0])
-
         with open(self.button_path[1], "rb") as f:
             self.button_bin_data = f.read()
-
         for button in self.buttons:
             self.objects.append(button)
             button["geometry"] = gltf_utils.load_gltf(
                 self, self.button_gltf, self.button_bin_data, scale=Vec3(0.3, 0.16, 0.3))
-
         self.isLoaded = True
 
     def exit_level(self):

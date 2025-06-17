@@ -13,10 +13,10 @@ import raycast
 
 
 class Enemy():
-    def __init__(self, player, walls, enemy_walls, position=Vec3(0, 0, 0), health=100, rotation=Vec3(0, 0, 0)):
+    def __init__(self, game, walls, enemy_walls, position=Vec3(0, 0, 0), health=100, rotation=Vec3(0, 0, 0)):
+        self.player = game.player  # Accept the player/game object directly
+        self.game = game  # Store the game context if needed
         self.is_alive = True
-
-        self.player = player
         self.position = position
         self.return_position = position
         self.speed = 0.2
@@ -49,7 +49,7 @@ class Enemy():
             self.walls.append(wall)
 
         self.proximity_radius = 40.0  # Distance within which the enemy will detect the player
-
+    
     def move(self, player_position, all_enemies):
         # Restore speed if slow duration is over
         if time.time() > self.slow_until and self.speed != self.normal_speed:
@@ -179,3 +179,171 @@ class Enemy():
 
     def is_dead(self):
         return not self.is_alive
+
+
+class Enemy1(Enemy):
+    def __init__(self, game, walls, enemy_walls, position=Vec3(0, 0, 0), health=100, rotation=Vec3(0, 0, 0)):
+        super().__init__(game, walls, enemy_walls, position, health, rotation)
+
+class Enemy2(Enemy):
+    def __init__(self, game, walls, enemy_walls, position=Vec3(0, 0, 0), health=100, rotation=Vec3(0, 0, 0)):
+        super().__init__(game, walls, enemy_walls, position, health, rotation)
+        self.game = game
+        self.health = 60
+        self.max_health = 60
+        
+        self.return_position = position  # Store original position
+        
+        self.speed = 0.1 # Override speed for Enemy2
+        self.preferred_distance = 15.0  # Distance to keep from player
+        self.projectile_cooldown = 3.0  # Seconds between shots
+        self.last_projectile_time = time.time()
+        self.proximity_radius = 50.0  # Distance within which the enemy will detect the player
+
+    def move(self, player_position, all_enemies):
+        # Calculate distance to player (ignore y for horizontal distance)
+        dx = self.position.x - player_position.x
+        dz = self.position.z - player_position.z
+        distance_to_player = math.sqrt(dx ** 2 + dz ** 2)
+        if distance_to_player > self.proximity_radius:
+            # Return to original position if not already there
+            if self.position != self.return_position:
+                direction_to_return = Vec3(
+                    self.return_position.x - self.position.x,
+                    0,
+                    self.return_position.z - self.position.z
+                )
+                if direction_to_return.mag > 0.1:
+                    direction_to_return = direction_to_return.normalize()
+                    new_position = self.position + direction_to_return.scale(self.speed)
+                    # Raycast from current to new position to check for wall collision
+                    ray_dir = (new_position - self.position).normalize()
+                    ray_length = (new_position - self.position).mag
+                    result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
+                    if not result:
+                        self.position = new_position
+            return  # Do nothing else if player is too far
+        # Only move in xz plane
+        direction = Vec3(
+            player_position.x - self.position.x,
+            0,
+            player_position.z - self.position.z
+        ).normalize()
+        move_vec = Vec3(0, 0, 0)
+        moving_away = False
+        # Repulsion from other Enemy2s
+        repulsion = Vec3(0, 0, 0)
+        min_dist = 6.0  # Social distance radius
+        for other in all_enemies:
+            if other["object"] is self or other["object"].is_dead():
+                continue
+            if not isinstance(other["object"], Enemy2):
+                continue
+            offset = self.position - other["object"].position
+            dist = math.sqrt(offset.x ** 2 + offset.z ** 2)
+            if dist < min_dist and dist > 0.01:
+                repulsion += offset.normalize().scale((min_dist - dist) / min_dist)
+        # Repulsion from walls (keep distance from walls)
+        wall_repulsion = Vec3(0, 0, 0)
+        wall_buffer = 6.0  # Increased minimum distance to keep from walls
+        for wall in self.walls:
+            if "buffer_data" in wall:
+                positions = wall["buffer_data"]
+                num_vertices = len(positions) // 5
+                for i in range(num_vertices):
+                    wall_pos = Vec3(positions[i*5], 0, positions[i*5+2])
+                    offset = self.position - wall_pos
+                    dist = math.sqrt(offset.x ** 2 + offset.z ** 2)
+                    if dist < wall_buffer and dist > 0.01:
+                        repulse_strength = (wall_buffer - dist) / wall_buffer
+                        wall_repulsion += offset.normalize().scale(repulse_strength)
+        # Preferred distance logic
+        if distance_to_player < self.preferred_distance - 1.0:
+            move_vec -= direction
+            moving_away = True
+        elif distance_to_player > self.preferred_distance + 1.0:
+            move_vec += direction
+        # Combine all movement influences
+        total_vec = move_vec + repulsion.scale(2.0) + wall_repulsion.scale(6.0)
+        if total_vec.mag > 0.01:
+            total_vec = total_vec.normalize().scale(self.speed)
+            new_position = Vec3(
+                self.position.x + total_vec.x,
+                self.position.y,
+                self.position.z + total_vec.z
+            )
+            # Raycast from current to new position to check for wall collision
+            ray_dir = (new_position - self.position).normalize()
+            ray_length = (new_position - self.position).mag
+            result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
+            if not result:
+                # Check if new_position is too close to any wall; if so, do not move
+                too_close_to_wall = False
+                for wall in self.walls:
+                    if "buffer_data" in wall:
+                        positions = wall["buffer_data"]
+                        num_vertices = len(positions) // 5
+                        for i in range(num_vertices):
+                            wall_pos = Vec3(positions[i*5], 0, positions[i*5+2])
+                            offset = new_position - wall_pos
+                            dist = math.sqrt(offset.x ** 2 + offset.z ** 2)
+                            if dist < wall_buffer:
+                                too_close_to_wall = True
+                                break
+                        if too_close_to_wall:
+                            break
+                if not too_close_to_wall:
+                    self.position = new_position
+        # Only shoot if not moving and has line of sight
+        is_moving = total_vec.mag > 0.01
+        if (not is_moving and self.is_player_in_sight(player_position)
+            and time.time() - self.last_projectile_time > self.projectile_cooldown):
+            self.shoot_projectile_at_player(self.game, player_position)
+            self.last_projectile_time = time.time()
+
+    def shoot_projectile_at_player(self, game, player_position):
+        # Use the actual player world position (camera is at -game.camera_pos)
+        player_world_pos = -game.camera_pos  # Vec3
+        enemy_world_pos = self.position      # Vec3
+        # Calculate direction from enemy to player (xz plane only)
+        direction = Vec3(
+            player_world_pos.x - enemy_world_pos.x,
+            0,
+            player_world_pos.z - enemy_world_pos.z
+        ).normalize()
+        # Set projectile start position (at enemy's position, with slight y offset)
+        projectile_pos = Vec3(enemy_world_pos.x, enemy_world_pos.y + 2, enemy_world_pos.z)
+        # Set projectile velocity (toward player)
+        projectile_velocity = direction.scale(0.2)  # Adjust speed as needed
+        # Use game context to create projectile
+        projectile = {
+            "id": 4,
+            "model": projectile_pos,
+            "velocity": projectile_velocity,
+            "program": game.sphere_program,
+            "geometry": game.generate_sphere(0.3, 10, 10, position=Vec3(0, 0, 0)),
+        }
+        game.projectiles.append(projectile)
+        game.objects.append(projectile)
+        print(f"Enemy2 shoots projectile at {player_world_pos}")
+
+        # Hard stop: if too close to any wall, do not move at all
+        wall_buffer = 8.0  # Very large buffer
+        for wall in self.walls:
+            if "buffer_data" in wall:
+                positions = wall["buffer_data"]
+                num_vertices = len(positions) // 5
+                for i in range(num_vertices):
+                    wall_pos = Vec3(positions[i*5], 0, positions[i*5+2])
+                    offset = self.position - wall_pos
+                    dist = math.sqrt(offset.x ** 2 + offset.z ** 2)
+                    if dist < wall_buffer:
+                        return  # Too close to a wall, do not move
+                    
+class Enemy3(Enemy):
+    def __init__(self, game, walls, enemy_walls, position=Vec3(0, 0, 0), health=300, rotation=Vec3(0, 0, 0)):
+        # 3x tankier than Enemy1 (default health=100)
+        super().__init__(game, walls, enemy_walls, position, health, rotation)
+        self.move_speed = 0.05  # Slower movement speed
+        self.health = 300  # Increased health
+        self.max_health = 300

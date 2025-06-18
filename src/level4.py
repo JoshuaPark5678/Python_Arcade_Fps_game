@@ -732,7 +732,7 @@ def room_triggers():
 def get_exit():
     exit = {
         "name": "exit_001",
-        "model": Vec3(0, 1, -104),
+        "model": Vec3(0, 1, -96),
         "destination": 5,
     }
     return exit

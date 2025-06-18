@@ -37,6 +37,7 @@ class Player:
         self.health = 5  # Player's health
         self.max_health = 5  # Player's maximum health
         self.is_alive = True  # Player's alive status
+        self.currency = 0  # Player's currency
 
     def apply_damage(self, damage):
         """
@@ -46,6 +47,13 @@ class Player:
         if self.health <= 0:
             self.is_alive = False
             self.health = 0
+
+    def add_currency(self, amount):
+        """
+        Add currency to the player.
+        """
+        self.currency += amount
+        print(f"Currency added: {amount}. Total: {self.currency}")
 
 
 class Game(arcade.Window):
@@ -61,13 +69,12 @@ class Game(arcade.Window):
         arcade.get_window().set_icon(self.icon)
 
         self.levels = [
-            level6,
             level1,
             level2,
             level3,
             level4,
             level5,
-            
+            level6,
         ]
 
         # debug variable
@@ -373,17 +380,15 @@ class Game(arcade.Window):
 
         self.button_path = [f"{self.file_dir}/models/button.gltf",
                             f"{self.file_dir}/models/button.bin"]
-        
+
         self.miniboss1_path = [f"{self.file_dir}/models/miniboss_sword.gltf",
                                f"{self.file_dir}/models/miniboss_sword.bin"]
-        
+
         self.miniboss2_path = [f"{self.file_dir}/models/miniboss_gun.gltf",
                                f"{self.file_dir}/models/miniboss_gun.bin"]
-        
+
         self.final_boss_path = [f"{self.file_dir}/models/final_boss.gltf",
                                 f"{self.file_dir}/models/final_boss.bin"]
-
-        self.load_level(1)  # Load the first level
 
         # Movement flags
         self.movement = {
@@ -397,7 +402,7 @@ class Game(arcade.Window):
         self.projectiles = []  # List to store projectiles
 
         # Money
-        self.player_currency = 0  # Player's currency
+        self.player_currency = self.player.currency  # Player's currency
 
         # Movement variables
         self.is_ADS = False  # Flag to track if the player is aiming down sights
@@ -469,6 +474,8 @@ class Game(arcade.Window):
         self.title_button_hover = False
         self.title_button_pressed = False
         self.title_button_rect = None  # (x, y, w, h)
+        self.level_select_rects = []  # List of (rect, level_num)
+        self.selected_level = 1
 
     def on_draw(self):
         # Show mouse on title screen, hide otherwise (except loading/paused handled elsewhere)
@@ -481,7 +488,8 @@ class Game(arcade.Window):
                 phase = self.time * 0.3
                 gray = int(30 + 40 * (0.5 + 0.5 * math.sin(phase + t * 1.5)))
                 arcade.draw_lrtb_rectangle_filled(
-                    0, self.screen_width, self.screen_height - i, self.screen_height - i - 4, (gray, gray, gray + 10)
+                    0, self.screen_width, self.screen_height -
+                    i, self.screen_height - i - 4, (gray, gray, gray + 10)
                 )
 
             # Animated title: fade in/out and slight vertical movement
@@ -506,11 +514,13 @@ class Game(arcade.Window):
             button_x = self.screen_width // 2
             button_y = self.screen_height // 2 - 40
             # Use arcade.create_text_image to get text size
-            text_img = arcade.create_text_image(button_text, arcade.color.WHITE, button_font_size, font_name="Kenney Future")
+            text_img = arcade.create_text_image(
+                button_text, arcade.color.WHITE, button_font_size, font_name="Kenney Future")
             text_width, text_height = text_img.width, text_img.height
             button_w = text_width + 120
             button_h = text_height + 20
-            self.title_button_rect = (button_x - button_w // 2, button_y - button_h // 2, button_w, button_h)
+            self.title_button_rect = (
+                button_x - button_w // 2, button_y - button_h // 2, button_w, button_h)
             # Detect hover/click color
             if self.title_button_pressed:
                 color = arcade.color.RED
@@ -520,7 +530,8 @@ class Game(arcade.Window):
                 color = (180, 180, 200)
             # Draw button background (optional, subtle)
             arcade.draw_xywh_rectangle_filled(
-                self.title_button_rect[0], self.title_button_rect[1], button_w, button_h, (60, 60, 60, 80)
+                self.title_button_rect[0], self.title_button_rect[1], button_w, button_h, (
+                    60, 60, 60, 80)
             )
             # Draw button border
             arcade.draw_xywh_rectangle_outline(
@@ -537,6 +548,27 @@ class Game(arcade.Window):
                 anchor_y="center",
                 font_name="Kenney Future"
             )
+            
+            self.level_select_rects = []
+            levels = list(range(1, len(self.levels)+1))
+            select_y = button_y - 160
+            for i, lvl in enumerate(levels):
+                rect_w = 50
+                rect_h = 40
+                rect_x = button_x + i*60 - (rect_w + 10)*len(levels) // 2
+                rect_y = select_y
+                rect = (rect_x, rect_y, rect_w, rect_h)
+                self.level_select_rects.append((rect, lvl))
+                color = arcade.color.YELLOW if self.selected_level == lvl else (
+                    120, 120, 120)
+                arcade.draw_xywh_rectangle_filled(
+                    rect_x, rect_y, rect_w, rect_h, (40, 40, 40, 200))
+                arcade.draw_xywh_rectangle_outline(
+                    rect_x, rect_y, rect_w, rect_h, color, 3)
+                arcade.draw_text(f"{lvl}", rect_x+rect_w//2, rect_y+rect_h//2, color,
+                                18, anchor_x="center", anchor_y="center", font_name="Kenney Future")
+            arcade.draw_text("Select Level", button_x, select_y+70, arcade.color.LIGHT_GRAY,
+                            16, anchor_x="center", anchor_y="center", font_name="Kenney Future")
             return
         else:
             self.set_mouse_visible(False)
@@ -630,16 +662,16 @@ class Game(arcade.Window):
             elif obj["id"] == 10:  # Render enemy objects
                 # Bind the GLTF program
                 obj["program"]["projection"] = self.proj
-                
-                if obj["type"] == 4: 
+
+                if obj["type"] == 4:
                     # For minibosses, use the miniboss shader program
                     if obj["object"].get_form() == 1:  # If the miniboss is a sword miniboss
                         geometry = obj["geometry"][0]
                     elif obj["object"].get_form() == 2:  # If the miniboss is a gun miniboss
                         geometry = obj["geometry"][1]
-                else: 
+                else:
                     geometry = obj["geometry"]
-                    
+
                 # Rotate the object around the Y-axis
                 object_rotation_matrix = (Mat4.from_rotation(
                     obj["object"].get_rotation().y, (0, 1, 0)) - Mat4.from_translation(Vec3(0, 0, 0)))  # Rotate around Y-axis
@@ -656,12 +688,13 @@ class Game(arcade.Window):
                 for i, enemy_geometry in enumerate(geometry):
 
                     obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
-                    
+
                     # Set material properties
                     if i == 0 and (obj["type"] == 3):
                         # For enemy3, use the special shader program
-                        obj["program"]["base_color_factor"] = (0.6, 0.1, 0.1, 1.0)  # Red color
-                        
+                        obj["program"]["base_color_factor"] = (
+                            0.6, 0.1, 0.1, 1.0)  # Red color
+
                     # Render the geometry
                     enemy_geometry["geometry"].render(obj["program"])
 
@@ -763,6 +796,55 @@ class Game(arcade.Window):
                 anchor_x="center",
                 anchor_y="center",
             )
+            return
+        # Boss dead: end game and go to win screen, wait for SPACE to return to title
+        finalbosses = [enemy["object"] for enemy in self.enemies if hasattr(
+            enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "FinalBoss" and enemy.get("spawned")]
+        if self.state == "WIN":
+            # Only show win screen, do not reset state here
+            self.clear()
+            arcade.draw_lrtb_rectangle_filled(
+                0, self.screen_width, self.screen_height, 0, (0, 0, 0, 220)
+            )
+            arcade.draw_text(
+                "YOU WIN!",
+                self.screen_width // 2,
+                self.screen_height // 2 + 80,
+                arcade.color.GREEN,
+                56,
+                anchor_x="center",
+                anchor_y="center",
+                bold=True,
+            )
+            arcade.draw_text(
+                "You have terminated the host computer and successfully completed your mission.",
+                self.screen_width // 2,
+                self.screen_height // 2,
+                arcade.color.WHITE,
+                20,
+                anchor_x="center",
+                anchor_y="center",
+                bold=True,
+                width=self.screen_width // 2,
+            )
+            arcade.draw_text(
+                "Press ENTER to return to Title",
+                self.screen_width // 2,
+                self.screen_height // 2 - 80,
+                arcade.color.LIGHT_GRAY,
+                24,
+                anchor_x="center",
+                anchor_y="center",
+            )
+            return
+        if finalbosses and all(boss.is_dead() for boss in finalbosses):
+            self.state = "WIN"
+            self.activated_rooms.clear()
+            self.enemies.clear()
+            self.objects.clear()
+            self.player.health = self.player.max_health
+            self.camera_pos = Vec3(0, -4, -5)
+            self.camera_rot = Vec3(0, 0, 0)
             return
         # ...existing code...
 
@@ -890,8 +972,14 @@ class Game(arcade.Window):
             arcade.draw_rectangle_outline(
                 self.screen_width // 2, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.BLACK, 4)
 
+            # display currency
+            arcade.draw_ellipse_filled(
+                self.screen_width // 3, self.screen_height // 22, self.screen_width // 8, self.screen_height // 14, arcade.color.DARK_GRAY)
+            arcade.draw_text(f"Currency: {self.player.currency}", self.screen_width // 3, self.screen_height // 22,
+                             arcade.color.GREEN, 12, font_name="Kenney Future", anchor_x="center", anchor_y="center", bold=True)
             # ======================MINIBOSS HEALTH====================== #
-            minibosses = [enemy["object"] for enemy in self.enemies if hasattr(enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "Miniboss" and not enemy["object"].is_dead() and enemy.get("spawned")]  # Only show if spawned
+            minibosses = [enemy["object"] for enemy in self.enemies if hasattr(
+                enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "Miniboss" and not enemy["object"].is_dead() and enemy.get("spawned")]  # Only show if spawned
             if minibosses:
                 miniboss = minibosses[0]  # Show the first alive miniboss
                 bar_w = self.screen_width // 2
@@ -899,19 +987,23 @@ class Game(arcade.Window):
                 bar_x = self.screen_width // 2 - bar_w // 2
                 bar_y = self.screen_height - 60
                 # Background
-                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, bar_w, bar_h, (40, 0, 0, 200))
+                arcade.draw_xywh_rectangle_filled(
+                    bar_x, bar_y, bar_w, bar_h, (40, 0, 0, 200))
                 # Health
                 health_ratio = miniboss.health / miniboss.max_health
-                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, int(bar_w * health_ratio), bar_h, arcade.color.RED)
+                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, int(
+                    bar_w * health_ratio), bar_h, arcade.color.RED)
                 # Border
-                arcade.draw_xywh_rectangle_outline(bar_x, bar_y, bar_w, bar_h, arcade.color.BLACK, 4)
+                arcade.draw_xywh_rectangle_outline(
+                    bar_x, bar_y, bar_w, bar_h, arcade.color.BLACK, 4)
                 # Text
                 arcade.draw_text(f"MINIBOSS HP: {miniboss.health:.0f} / {miniboss.max_health}",
-                                self.screen_width // 2, bar_y + bar_h // 2,
-                                arcade.color.WHITE, 18, anchor_x="center", anchor_y="center", bold=True)
+                                 self.screen_width // 2, bar_y + bar_h // 2,
+                                 arcade.color.WHITE, 18, anchor_x="center", anchor_y="center", bold=True)
 
             # ======================FINALBOSS HEALTH====================== #
-            finalbosses = [enemy["object"] for enemy in self.enemies if hasattr(enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "FinalBoss" and not enemy["object"].is_dead() and enemy.get("spawned")]  # Only show if spawned
+            finalbosses = [enemy["object"] for enemy in self.enemies if hasattr(
+                enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "FinalBoss" and not enemy["object"].is_dead() and enemy.get("spawned")]  # Only show if spawned
             if finalbosses:
                 finalboss = finalbosses[0]  # Show the first alive final boss
                 bar_w = self.screen_width // 2
@@ -923,9 +1015,12 @@ class Game(arcade.Window):
                 phase2_w = int(bar_w * (1/3))
                 phase3_w = bar_w - phase1_w - phase2_w
                 # Phase backgrounds
-                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, phase1_w, bar_h, (60, 0, 0, 180))
-                arcade.draw_xywh_rectangle_filled(bar_x + phase1_w, bar_y, phase2_w, bar_h, (60, 30, 0, 180))
-                arcade.draw_xywh_rectangle_filled(bar_x + phase1_w + phase2_w, bar_y, phase3_w, bar_h, (0, 40, 80, 180))
+                arcade.draw_xywh_rectangle_filled(
+                    bar_x, bar_y, phase1_w, bar_h, (60, 0, 0, 180))
+                arcade.draw_xywh_rectangle_filled(
+                    bar_x + phase1_w, bar_y, phase2_w, bar_h, (60, 30, 0, 180))
+                arcade.draw_xywh_rectangle_filled(
+                    bar_x + phase1_w + phase2_w, bar_y, phase3_w, bar_h, (0, 40, 80, 180))
                 # Health overlay (color by phase)
                 health_ratio = finalboss.health / finalboss.max_health
                 if finalboss.phase == 1:
@@ -934,16 +1029,20 @@ class Game(arcade.Window):
                     color = arcade.color.ORANGE
                 else:
                     color = arcade.color.BLUE
-                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, int(bar_w * health_ratio), bar_h, color)
+                arcade.draw_xywh_rectangle_filled(
+                    bar_x, bar_y, int(bar_w * health_ratio), bar_h, color)
                 # Border
-                arcade.draw_xywh_rectangle_outline(bar_x, bar_y, bar_w, bar_h, arcade.color.BLACK, 4)
+                arcade.draw_xywh_rectangle_outline(
+                    bar_x, bar_y, bar_w, bar_h, arcade.color.BLACK, 4)
                 # Phase dividers
-                arcade.draw_line(bar_x + phase1_w, bar_y, bar_x + phase1_w, bar_y + bar_h, arcade.color.BLACK, 3)
-                arcade.draw_line(bar_x + phase1_w + phase2_w, bar_y, bar_x + phase1_w + phase2_w, bar_y + bar_h, arcade.color.BLACK, 3)
+                arcade.draw_line(bar_x + phase1_w, bar_y, bar_x +
+                                 phase1_w, bar_y + bar_h, arcade.color.BLACK, 3)
+                arcade.draw_line(bar_x + phase1_w + phase2_w, bar_y, bar_x +
+                                 phase1_w + phase2_w, bar_y + bar_h, arcade.color.BLACK, 3)
                 # Text
                 arcade.draw_text(f"FINAL BOSS PHASE {finalboss.phase} HP: {finalboss.health:.0f} / {finalboss.max_health}",
-                                self.screen_width // 2, bar_y + bar_h // 2,
-                                arcade.color.WHITE, 20, anchor_x="center", anchor_y="center", bold=True)
+                                 self.screen_width // 2, bar_y + bar_h // 2,
+                                 arcade.color.WHITE, 20, anchor_x="center", anchor_y="center", bold=True)
 
             # ========================GAME_INFO========================== #
 
@@ -1086,7 +1185,6 @@ class Game(arcade.Window):
                     if room1_dead and door["condition"] == "room1_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
-                        
 
                     elif room2_dead and door["condition"] == "room2_dead":
                         door["lock"] = False
@@ -1095,7 +1193,7 @@ class Game(arcade.Window):
                     elif room3_dead and door["condition"] == "room3_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
-                    
+
                     elif room4_dead and door["condition"] == "room4_dead":
                         door["lock"] = False
                         door["opacity"] = 0.5
@@ -1414,13 +1512,25 @@ class Game(arcade.Window):
             self.camera_rot.x = math.pi / 2
 
     def on_key_press(self, key, modifiers):
-        if self.state == "TITLE":
+        if self.state == "WIN":
             if key == arcade.key.ENTER or key == arcade.key.RETURN:
+                self.state = "TITLE"
+                return
+            # Disable ESC/pause during win screen
+            return
+        if self.state == "TITLE":
+            if key == arcade.key.LEFT:
+                self.selected_level = max(1, self.selected_level-1)
+                return
+            elif key == arcade.key.RIGHT:
+                self.selected_level = min(
+                    len(self.levels), self.selected_level+1)
+                return
+            elif key == arcade.key.ENTER or key == arcade.key.RETURN:
+                print(f"Selected level: {self.selected_level}")
+                self.load_level(self.selected_level)
                 self.state = "GAME"
                 return
-            else:
-                return  # Ignore other keys on title screen
-
         # Exit from pause or death screen
         if self.is_paused or (hasattr(self.player, "health") and self.player.health <= 0):
             if key == arcade.key.Q:
@@ -1555,7 +1665,9 @@ class Game(arcade.Window):
         if self.state == "TITLE" and self.title_button_rect:
             bx, by, bw, bh = self.title_button_rect
             if bx <= x <= bx + bw and by <= y <= by + bh:
-                self.title_button_pressed = True
+                print(f"Selected level: {self.selected_level}")
+                self.load_level(self.selected_level)
+                self.state = "GAME"
             return  # Prevent shooting when clicking the start button
         if button == arcade.MOUSE_BUTTON_LEFT:
             if self.weapon_manager.shoot():
@@ -1702,6 +1814,7 @@ class Game(arcade.Window):
 
             for lon in range(lon_segments + 1):
                 phi = 2 * math.pi * lon / lon_segments  # Longitude angle
+
                 sin_phi = math.sin(phi)
                 cos_phi = math.cos(phi)
 
@@ -1752,11 +1865,11 @@ class Game(arcade.Window):
                 num_vertices = len(positions) // 5
 
                 center_x = sum(positions[i * 5]
-                            for i in range(num_vertices)) / num_vertices
+                               for i in range(num_vertices)) / num_vertices
                 center_y = sum(positions[i * 5 + 1]
-                            for i in range(num_vertices)) / num_vertices
+                               for i in range(num_vertices)) / num_vertices
                 center_z = sum(positions[i * 5 + 2]
-                            for i in range(num_vertices)) / num_vertices
+                               for i in range(num_vertices)) / num_vertices
 
                 center = Vec3(center_x, center_y, center_z)
 
@@ -1841,8 +1954,10 @@ class Game(arcade.Window):
                     elif enemy["type"] == 4:
                         # mini boss enemy
                         enemy["geometry"] = [
-                            gltf_utils.load_gltf(self, self.miniboss1_gltf, self.miniboss1_bin_data, scale=Vec3(4, 4, 4)),
-                            gltf_utils.load_gltf(self, self.miniboss2_gltf, self.miniboss2_bin_data, scale=Vec3(4, 4, 4))
+                            gltf_utils.load_gltf(
+                                self, self.miniboss1_gltf, self.miniboss1_bin_data, scale=Vec3(4, 4, 4)),
+                            gltf_utils.load_gltf(
+                                self, self.miniboss2_gltf, self.miniboss2_bin_data, scale=Vec3(4, 4, 4))
                         ]
                     elif enemy["type"] == 5:
                         # final boss enemy
@@ -1857,7 +1972,7 @@ class Game(arcade.Window):
 
         # Add the walls to the list of objects
         # Add geometry to the walls
-       
+
         for wall in self.walls:
             self.objects.append(wall)
             wall_buffer = self.ctx.buffer(data=array('f', wall["buffer_data"]))
@@ -1866,12 +1981,11 @@ class Game(arcade.Window):
             if "texture" not in wall:
                 wall["texture"] = 1  # Set texture ID for walls
             if "opacity" not in wall:
-                wall["opacity"] = 1.0  # Set default opacity for walls    
-                
+                wall["opacity"] = 1.0  # Set default opacity for walls
+
             # Use the same shader program for walls
             wall["program"] = self.plane
-            
-           
+
             wall["geometry"] = self.ctx.geometry(
                 content=[BufferDescription(
                     wall_buffer, "3f 2f", ("in_pos", "in_uv"))],
@@ -1905,13 +2019,13 @@ class Game(arcade.Window):
 
         self.enemy1_gltf = GLTF2().load(self.enemy1_path[0])
         self.enemy2_gltf = GLTF2().load(self.enemy2_path[0])
-        
+
         with open(self.enemy1_path[1], "rb") as f:
             self.enemy1_bin_data = f.read()
 
         with open(self.enemy2_path[1], "rb") as f:
             self.enemy2_bin_data = f.read()
-            
+
         # mini boss
         self.miniboss1_gltf = GLTF2().load(self.miniboss1_path[0])
         self.miniboss2_gltf = GLTF2().load(self.miniboss2_path[0])
@@ -1920,12 +2034,12 @@ class Game(arcade.Window):
             self.miniboss1_bin_data = f.read()
         with open(self.miniboss2_path[1], "rb") as f:
             self.miniboss2_bin_data = f.read()
-        
+
         # final boss
         self.final_boss_gltf = GLTF2().load(self.final_boss_path[0])
         with open(self.final_boss_path[1], "rb") as f:
             self.final_boss_bin_data = f.read()
-    
+
         # Room triggers
         self.room_triggers = self.levels[level - 1].room_triggers()
         self.activated_rooms = set()

@@ -27,7 +27,7 @@ class Enemy():
 
         self.health = health
         self.max_health = health
-        
+
         self.rotation = rotation
 
         self.attack_damage = 1
@@ -38,7 +38,7 @@ class Enemy():
         self.last_attack_time = time.time()  # Time when the last attack occurred
         self.pre_attack_timer = 0.0  # Timer for pre-attack animation
         self.is_attacking = False
-        
+
         self.radius = 1.0  # Radius for collision detection
 
         self.walls = []
@@ -50,7 +50,7 @@ class Enemy():
             self.walls.append(wall)
 
         self.proximity_radius = 40.0  # Distance within which the enemy will detect the player
-    
+
     def move(self, player_position, all_enemies):
         # Restore speed if slow duration is over
         if time.time() > self.slow_until and self.speed != self.normal_speed:
@@ -109,7 +109,8 @@ class Enemy():
                     self.return_position.z - self.position.z
                 ).normalize()
                 old_position = self.position
-                self.position = self.position + direction_to_return.scale(self.speed)
+                self.position = self.position + \
+                    direction_to_return.scale(self.speed)
                 if not self.is_position_clear(self.position, self.walls, radius=self.radius):
                     self.position = old_position
             self.is_attacking = False
@@ -137,7 +138,7 @@ class Enemy():
         return not result
 
     def return_is_in_sight(self):
-        # raytrace from enemy to return position 
+        # raytrace from enemy to return position
         ray_start = Vec3(self.position.x, self.position.y + 1, self.position.z)
         ray_end = self.return_position
         ray_direction = Vec3(
@@ -153,7 +154,7 @@ class Enemy():
         result, _ = raycast.raycast(
             ray_start, ray_direction, self.walls, ray_length=distance_to_return)
         return not result
-    
+
     def attack_player(self, player_position):
         # Implement your attack logic here
         print("Attacking player at:", player_position)
@@ -169,7 +170,7 @@ class Enemy():
 
     def get_health(self):
         return self.health
-    
+
     def get_max_health(self):
         return self.max_health
 
@@ -186,6 +187,8 @@ class Enemy():
             self.die()
 
     def die(self):
+        # give player currency
+        self.game.player.add_currency(10)  # Example: give 10 currency
         print("Enemy has died")
         self.is_alive = False
 
@@ -200,7 +203,8 @@ class Enemy():
                 num_vertices = len(positions) // 5
                 for i in range(num_vertices):
                     wall_pos = Vec3(positions[i*5], 0, positions[i*5+2])
-                    dist = math.sqrt((pos.x - wall_pos.x) ** 2 + (pos.z - wall_pos.z) ** 2)
+                    dist = math.sqrt((pos.x - wall_pos.x) **
+                                     2 + (pos.z - wall_pos.z) ** 2)
                     if dist < radius:
                         return False
         return True
@@ -209,11 +213,13 @@ class Enemy():
         # Try to nudge out in 8 directions
         for angle in range(0, 360, 45):
             rad = math.radians(angle)
-            nudge = Vec3(math.cos(rad), 0, math.sin(rad)).scale(self.radius * 1.2)
+            nudge = Vec3(math.cos(rad), 0, math.sin(rad)
+                         ).scale(self.radius * 1.2)
             test_pos = self.position + nudge
             if self.is_position_clear(test_pos, self.walls, radius=self.radius):
                 self.position = test_pos
                 break
+
 
 class Enemy1(Enemy):
     def __init__(self, game, walls, enemy_walls, position=Vec3(0, 0, 0), health=100, rotation=Vec3(0, 0, 0), returnhome=True):
@@ -278,7 +284,8 @@ class Enemy1(Enemy):
                     self.return_position.z - self.position.z
                 ).normalize()
                 old_position = self.position
-                self.position = self.position + direction_to_return.scale(self.speed)
+                self.position = self.position + \
+                    direction_to_return.scale(self.speed)
                 if not self.is_position_clear(self.position, self.walls, radius=self.radius):
                     self.position = old_position
             self.is_attacking = False
@@ -306,7 +313,7 @@ class Enemy1(Enemy):
         return not result
 
     def return_is_in_sight(self):
-        # raytrace from enemy to return position 
+        # raytrace from enemy to return position
         ray_start = Vec3(self.position.x, self.position.y + 1, self.position.z)
         ray_end = self.return_position
         ray_direction = Vec3(
@@ -322,7 +329,7 @@ class Enemy1(Enemy):
         result, _ = raycast.raycast(
             ray_start, ray_direction, self.walls, ray_length=distance_to_return)
         return not result
-    
+
     def attack_player(self, player_position):
         # Implement your attack logic here
         print("Attacking player at:", player_position)
@@ -338,7 +345,7 @@ class Enemy1(Enemy):
 
     def get_health(self):
         return self.health
-    
+
     def get_max_health(self):
         return self.max_health
 
@@ -354,10 +361,6 @@ class Enemy1(Enemy):
         if self.health <= 0:
             self.die()
 
-    def die(self):
-        print("Enemy has died")
-        self.is_alive = False
-
     def is_dead(self):
         return not self.is_alive
 
@@ -369,10 +372,10 @@ class Enemy2(Enemy):
         self.game = game
         self.health = 60
         self.max_health = 60
-        
+
         self.return_position = position  # Store original position
-        
-        self.speed = 0.1 # Override speed for Enemy2
+
+        self.speed = 0.1  # Override speed for Enemy2
         self.preferred_distance = 15.0  # Distance to keep from player
         self.projectile_cooldown = 3.0  # Seconds between shots
         self.last_projectile_time = time.time()
@@ -393,11 +396,13 @@ class Enemy2(Enemy):
                 )
                 if direction_to_return.mag > 0.1:
                     direction_to_return = direction_to_return.normalize()
-                    new_position = self.position + direction_to_return.scale(self.speed)
+                    new_position = self.position + \
+                        direction_to_return.scale(self.speed)
                     # Raycast from current to new position to check for wall collision
                     ray_dir = (new_position - self.position).normalize()
                     ray_length = (new_position - self.position).mag
-                    result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
+                    result, _ = raycast.raycast(
+                        self.position, ray_dir, self.walls, ray_length=ray_length)
                     if not result:
                         self.position = new_position
             return  # Do nothing else if player is too far
@@ -453,7 +458,8 @@ class Enemy2(Enemy):
             # Raycast from current to new position to check for wall collision
             ray_dir = (new_position - self.position).normalize()
             ray_length = (new_position - self.position).mag
-            result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
+            result, _ = raycast.raycast(
+                self.position, ray_dir, self.walls, ray_length=ray_length)
             if not result:
                 # Check if new_position is too close to any wall; if so, do not move
                 too_close_to_wall = False
@@ -462,7 +468,8 @@ class Enemy2(Enemy):
                         positions = wall["buffer_data"]
                         num_vertices = len(positions) // 5
                         for i in range(num_vertices):
-                            wall_pos = Vec3(positions[i*5], 0, positions[i*5+2])
+                            wall_pos = Vec3(
+                                positions[i*5], 0, positions[i*5+2])
                             offset = new_position - wall_pos
                             dist = math.sqrt(offset.x ** 2 + offset.z ** 2)
                             if dist < wall_buffer:
@@ -475,7 +482,7 @@ class Enemy2(Enemy):
         # Only shoot if not moving and has line of sight
         is_moving = total_vec.mag > 0.01
         if (not is_moving and self.is_player_in_sight(player_position)
-            and time.time() - self.last_projectile_time > self.projectile_cooldown):
+                and time.time() - self.last_projectile_time > self.projectile_cooldown):
             self.shoot_projectile_at_player(self.game, player_position)
             self.last_projectile_time = time.time()
 
@@ -490,7 +497,8 @@ class Enemy2(Enemy):
             player_world_pos.z - enemy_world_pos.z
         ).normalize()
         # Set projectile start position (at enemy's position, with slight y offset)
-        projectile_pos = Vec3(enemy_world_pos.x, enemy_world_pos.y + 2, enemy_world_pos.z)
+        projectile_pos = Vec3(
+            enemy_world_pos.x, enemy_world_pos.y + 2, enemy_world_pos.z)
         # Set projectile velocity (toward player)
         projectile_velocity = direction.scale(0.2)  # Adjust speed as needed
         # Use game context to create projectile
@@ -517,7 +525,8 @@ class Enemy2(Enemy):
                     dist = math.sqrt(offset.x ** 2 + offset.z ** 2)
                     if dist < wall_buffer:
                         return  # Too close to a wall, do not move
-                    
+
+
 class Enemy3(Enemy):
     def __init__(self, game, walls, enemy_walls, position=Vec3(0, 0, 0), health=300, rotation=Vec3(0, 0, 0), returnhome=True):
         super().__init__(game, walls, enemy_walls, position, health, rotation)
@@ -527,8 +536,7 @@ class Enemy3(Enemy):
         self.slow_speed = 0.1   # Same as normal speed
         self.health = 300  # Increased health
         self.max_health = 300
-        
-        
+
     def move(self, player_position, all_enemies):
         # Restore speed if slow duration is over
         if time.time() > self.slow_until and self.speed != self.normal_speed:
@@ -615,7 +623,7 @@ class Enemy3(Enemy):
         return not result
 
     def return_is_in_sight(self):
-        # raytrace from enemy to return position 
+        # raytrace from enemy to return position
         ray_start = Vec3(self.position.x, self.position.y + 1, self.position.z)
         ray_end = self.return_position
         ray_direction = Vec3(
@@ -631,7 +639,7 @@ class Enemy3(Enemy):
         result, _ = raycast.raycast(
             ray_start, ray_direction, self.walls, ray_length=distance_to_return)
         return not result
-    
+
     def attack_player(self, player_position):
         # Implement your attack logic here
         print("Attacking player at:", player_position)
@@ -647,7 +655,7 @@ class Enemy3(Enemy):
 
     def get_health(self):
         return self.health
-    
+
     def get_max_health(self):
         return self.max_health
 
@@ -663,10 +671,6 @@ class Enemy3(Enemy):
         if self.health <= 0:
             self.die()
 
-    def die(self):
-        print("Enemy has died")
-        self.is_alive = False
-
     def is_dead(self):
         return not self.is_alive
 
@@ -677,18 +681,19 @@ class Miniboss(Enemy):
         self.form = 1  # 1 = sword, 2 = gun
         self.geometry_form1 = None  # Sword form geometry
         self.geometry_form2 = None  # Gun form geometry
-        self.form_switch_cooldown = 10.0  # seconds between form switches (now 10s)
+        # seconds between form switches (now 10s)
+        self.form_switch_cooldown = 3.0
         self.last_form_switch = time.time()
         self.health = 1200
         self.max_health = 1200
         # Sword form: melee
-        self.sword_attack_range = 3.0
+        self.sword_attack_range = 5.0
         self.sword_attack_damage = 20
-        self.sword_speed = 0.22
+        self.sword_speed = 0.4
         self.sword_dash_speed = 1.0
-        self.sword_dash_cooldown = 3.0
-        self.sword_dash_duration = 0.18
-        self.sword_dash_windup = 0.35
+        self.sword_dash_cooldown = 2.0
+        self.sword_dash_duration = 0.2
+        self.sword_dash_windup = 0.3
         self.sword_dash_windup_first = 0.35  # First dash windup
         self.sword_dash_windup_repeat = 0.7  # Subsequent dash windup (slower)
         self.sword_last_dash = 0
@@ -701,7 +706,7 @@ class Miniboss(Enemy):
         # Gun form: ranged
         self.gun_attack_range = 30.0
         self.gun_attack_damage = 1  # Increased damage
-        self.gun_speed = 0.08  # Slower than sword form
+        self.gun_speed = 0.2  # Slower than sword form
         self.gun_projectile_cooldown = 0.45  # Shoots more frequently
         self.gun_burst_count = 3  # Shoots a burst of 3
         self.gun_burst_interval = 0.08  # Time between burst shots
@@ -717,13 +722,17 @@ class Miniboss(Enemy):
 
     def move(self, player_position, all_enemies):
         now = time.time()
+        if self.form == 1:
+            self.form_switch_cooldown = 5.0
+        else:
+            self.form_switch_cooldown = 3.0
         # Switch form every ~10 seconds, but bias choice by distance
         if now - self.last_form_switch > self.form_switch_cooldown:
             dx = self.position.x - player_position.x
             dz = self.position.z - player_position.z
             distance_to_player = math.sqrt(dx ** 2 + dz ** 2)
             # Probability: more likely to go to sword if close, gun if far
-            if distance_to_player < 8.0:
+            if distance_to_player < 12.0:
                 prob_gun = 0.2
             elif distance_to_player > 16.0:
                 prob_gun = 0.8
@@ -770,7 +779,13 @@ class Miniboss(Enemy):
             elif self.sword_dashing:
                 # Dashing phase: move quickly in dash direction
                 if self.sword_dash_direction is not None:
-                    self.position = self.position + self.sword_dash_direction.scale(self.sword_dash_speed)
+                    old_position = self.position
+                    self.position = self.position + \
+                        self.sword_dash_direction.scale(self.sword_dash_speed)
+                    # Prevent getting stuck in wall after dash
+                    if not self.is_position_clear(self.position, self.walls, radius=self.radius):
+                        self.position = old_position
+                        self.unstick_from_wall()
                 if now >= self.sword_dash_end_time:
                     self.sword_dashing = False
                     self.sword_dash_direction = None
@@ -779,6 +794,9 @@ class Miniboss(Enemy):
                 # Reset dash count if not dashing or winding up
                 self.sword_dash_count = 0
                 super().move(player_position, all_enemies)
+                # After normal move, unstick if needed
+                if not self.is_position_clear(self.position, self.walls, radius=self.radius):
+                    self.unstick_from_wall()
         else:
             self.speed = self.gun_speed
             self.attack_range = self.gun_attack_range
@@ -788,14 +806,21 @@ class Miniboss(Enemy):
             preferred_distance = 18.0
             move_vec = Vec3(0, 0, 0)
             if distance_to_player < preferred_distance - 2.0:
-                direction = Vec3(player_position.x - self.position.x, 0, player_position.z - self.position.z).normalize()
+                direction = Vec3(player_position.x - self.position.x,
+                                 0, player_position.z - self.position.z).normalize()
                 move_vec -= direction
             elif distance_to_player > preferred_distance + 2.0:
-                direction = Vec3(player_position.x - self.position.x, 0, player_position.z - self.position.z).normalize()
+                direction = Vec3(player_position.x - self.position.x,
+                                 0, player_position.z - self.position.z).normalize()
                 move_vec += direction
             if move_vec.mag > 0.01:
+                old_position = self.position
                 move_vec = move_vec.normalize().scale(self.speed)
                 self.position = self.position + move_vec
+                # Prevent getting stuck in wall after move
+                if not self.is_position_clear(self.position, self.walls, radius=self.radius):
+                    self.position = old_position
+                    self.unstick_from_wall()
             # Burst fire logic
             now = time.time()
             if self.gun_burst_shots_left > 0 and now >= self.gun_burst_next_shot_time:
@@ -823,7 +848,8 @@ class Miniboss(Enemy):
         angle = math.atan2(direction.z, direction.x)
         angle += random.uniform(-bloom_angle, bloom_angle)
         bloom_dir = Vec3(math.cos(angle), 0, math.sin(angle)).normalize()
-        projectile_pos = Vec3(enemy_world_pos.x, enemy_world_pos.y + 2, enemy_world_pos.z)
+        projectile_pos = Vec3(
+            enemy_world_pos.x, enemy_world_pos.y + 2, enemy_world_pos.z)
         projectile_velocity = bloom_dir.scale(0.32)
         projectile = {
             "id": 4,
@@ -858,8 +884,8 @@ class FinalBoss(Enemy):
         self.max_minions = 5  # Max minions alive at once (phase 1, more)
         self.minion_type = 1  # 1: Enemy1, 2: Enemy2, 3: Enemy3
         self.radius = 2.5  # Larger collision for boss
-        self.health = 2000
-        self.max_health = 2000
+        self.health = 200
+        self.max_health = 200
         self.phase = 1
         self.stationary = True
         self.phase_transitioned = set()
@@ -867,7 +893,7 @@ class FinalBoss(Enemy):
         self.flee_speed = 3  # Phase 2 and 3 flee speed
         self.target_pos = None
         self.last_move_time = time.time()
-        self.move_cooldown = 0.08  # How often boss moves in phase 3
+        self.move_cooldown = 0.01  # How often boss moves in phase 3
         self.fleeing = False
         self.flee_target = Vec3(36, -2, 0)  # Phase 2 flee
         self.flee_target2 = Vec3(34, -2, -84)  # Phase 3 first flee
@@ -907,10 +933,12 @@ class FinalBoss(Enemy):
             if dist > 0.5:
                 direction = Vec3(dx, 0, dz).normalize()
                 if now - self.last_move_time > self.move_cooldown:
-                    new_position = self.position + direction.scale(self.flee_speed)
+                    new_position = self.position + \
+                        direction.scale(self.flee_speed)
                     ray_dir = (new_position - self.position).normalize()
                     ray_length = (new_position - self.position).mag
-                    result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
+                    result, _ = raycast.raycast(
+                        self.position, ray_dir, self.walls, ray_length=ray_length)
                     if not result:
                         self.position = new_position
                     self.last_move_time = now
@@ -942,7 +970,8 @@ class FinalBoss(Enemy):
                         new_position = self.position + direction.scale(step)
                         ray_dir = (new_position - self.position).normalize()
                         ray_length = (new_position - self.position).mag
-                        result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
+                        result, _ = raycast.raycast(
+                            self.position, ray_dir, self.walls, ray_length=ray_length)
                         if not result:
                             self.position = new_position
                         self.last_move_time = now
@@ -963,9 +992,11 @@ class FinalBoss(Enemy):
                         new_position = self.position + direction.scale(step)
                         ray_dir = (new_position - self.position).normalize()
                         ray_length = (new_position - self.position).mag
-                        result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
-                        if not result:
-                            self.position = new_position
+                        result, _ = raycast.raycast(
+                            self.position, ray_dir, self.walls, ray_length=ray_length)
+                        # if not result:
+                        #     self.position = new_position
+                        self.position = new_position
                         self.last_move_time = now
                     return
                 else:
@@ -976,7 +1007,7 @@ class FinalBoss(Enemy):
                     dz = player_position.z - self.position.z
                     self.rotation = Vec3(0, math.atan2(dx, dz), 0)
                     return
-        # Phase 3: mobile, chase player
+        # Phase 3: mobile, chase player and enable face plant attack
         if self.phase == 3 and self.phase3_flee_state == 3 and not self.stationary:
             # Move toward player (xz plane)
             dx = player_position.x - self.position.x
@@ -986,14 +1017,27 @@ class FinalBoss(Enemy):
                 direction = Vec3(dx, 0, dz).normalize()
                 # Move only every move_cooldown seconds
                 if now - self.last_move_time > self.move_cooldown:
-                    new_position = self.position + direction.scale(self.move_speed)
+                    new_position = self.position + \
+                        direction.scale(self.move_speed)
                     # Raycast to avoid walking through walls
                     ray_dir = (new_position - self.position).normalize()
                     ray_length = (new_position - self.position).mag
-                    result, _ = raycast.raycast(self.position, ray_dir, self.walls, ray_length=ray_length)
-                    if not result:
-                        self.position = new_position
+                    result, _ = raycast.raycast(
+                        self.position, ray_dir, self.walls, ray_length=ray_length)
+
+                    self.position = new_position
                     self.last_move_time = now
+            # Face plant attack logic (phase 3 only)
+            face_plant_range = 4.0
+            face_plant_cooldown = 5.0
+            if not hasattr(self, 'last_face_plant_time'):
+                self.last_face_plant_time = 0
+            if dist <= face_plant_range and (now - self.last_face_plant_time > face_plant_cooldown):
+                # Perform face plant attack
+                print("FinalBoss: Face plant attack!")
+                if hasattr(self.player, 'apply_damage'):
+                    self.player.apply_damage(1)  # High damage
+                self.last_face_plant_time = now
         # Optionally: add new attack patterns in phase 3
         # (e.g., area attack, projectile, etc.)
 
@@ -1002,7 +1046,8 @@ class FinalBoss(Enemy):
         import numpy as np
         max_attempts = 12
         for attempt in range(max_attempts):
-            offset = Vec3(np.random.uniform(-4, 4), 0, np.random.uniform(-4, 4))
+            offset = Vec3(np.random.uniform(-4, 4),
+                          0, np.random.uniform(-4, 4))
             spawn_pos = self.position + offset
             if self.is_position_clear(spawn_pos, self.walls, radius=1.0):
                 break
@@ -1012,15 +1057,18 @@ class FinalBoss(Enemy):
         current_walls = self.game.walls
         current_enemy_walls = getattr(self.game, 'enemy_walls', [])
         if self.minion_type == 1:
-            minion = Enemy1(self.game, current_walls, current_enemy_walls, spawn_pos, 100, returnhome=False)
+            minion = Enemy1(self.game, current_walls,
+                            current_enemy_walls, spawn_pos, 100, returnhome=False)
             minion_type_int = 1
             self.minion_type = 2
         elif self.minion_type == 2:
-            minion = Enemy2(self.game, current_walls, current_enemy_walls, spawn_pos, 100, returnhome=False)
+            minion = Enemy2(self.game, current_walls,
+                            current_enemy_walls, spawn_pos, 100, returnhome=False)
             minion_type_int = 2
             self.minion_type = 3
         else:
-            minion = Enemy3(self.game, current_walls, current_enemy_walls, spawn_pos, 200, returnhome=False)
+            minion = Enemy3(self.game, current_walls,
+                            current_enemy_walls, spawn_pos, 200, returnhome=False)
             minion_type_int = 3
             self.minion_type = 1
         minion.spawner_boss_id = self
@@ -1052,4 +1100,3 @@ class FinalBoss(Enemy):
         return not self.is_alive
 
     # ...existing code...
-

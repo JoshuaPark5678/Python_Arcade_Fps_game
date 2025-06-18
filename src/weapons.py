@@ -72,6 +72,7 @@ class Revolver(Weapon):
         self.cylinder_spin = 0  # Spin of the cylinder
         self.spin_aim = 0  # The cylinder spin till reaching the aim
         
+        self.sound_volume = 0.2  # Default sound volume
         self.shoot_sound = None
         self.reload_sound = None
         # ...add more as needed
@@ -184,9 +185,9 @@ class Revolver(Weapon):
             self.time_since_last_frame = 0
 
             self.spin_aim = (self.cylinder_spin + 72) % 360
-            
+
             # play the shoot sound
-            self.shoot_sound.play()
+            self.shoot_sound.play(volume=self.sound_volume)
 
     def reload_weapon(self):
         if not self.in_reload:
@@ -194,7 +195,7 @@ class Revolver(Weapon):
             self.reload_frame = 0
             self.time_since_last_frame = 0
             
-            self.reload_sound.play(speed=2.0)
+            self.reload_sound.play(speed=2.0, volume=self.sound_volume)
 
     def update(self, delta_time):
         self.shake_speed = self.game.shake_speed
@@ -301,6 +302,7 @@ class Shotgun(Weapon):
         self.animation_speed = 0.03
         self.chamber = [1] * self.max_ammo
         
+        self.sound_volume = 0.2  # Default sound volume
         self.shoot_sound = None
         self.reload_sound = None
         # ...add more as needed
@@ -392,7 +394,7 @@ class Shotgun(Weapon):
             self.time_since_last_frame = 0
             
             # play the shoot sound
-            self.shoot_sound.play()
+            self.shoot_sound.play(volume=self.sound_volume)
 
     def reload_weapon(self):
         if not self.in_reload:
@@ -400,8 +402,8 @@ class Shotgun(Weapon):
             self.reload_frame = 0
             self.time_since_last_frame = 0
             self.anim_running = True
-            
-            self.reload_sound.play()
+
+            self.reload_sound.play(volume=self.sound_volume)
 
     def update(self, delta_time):
         self.shake_speed = self.game.shake_speed
@@ -433,7 +435,7 @@ class Shotgun(Weapon):
                         self.current_frame = 0
                         self.anim_running = False
                 elif self.current_frame == len(self.shoot_textures) - 10:
-                    self.reload_sound.play()
+                    self.reload_sound.play(volume=self.sound_volume)
                 else:
                     if self.current_frame >= len(self.shoot_textures):
                         self.current_frame = 0

@@ -18,7 +18,9 @@ import threading
 import level1
 import level2
 import level3
+import level4
 import level5
+import level6
 
 # ----- UTILS ----- #
 import gltf_utils
@@ -59,11 +61,13 @@ class Game(arcade.Window):
         arcade.get_window().set_icon(self.icon)
 
         self.levels = [
-            
+            level6,
             level1,
             level2,
             level3,
+            level4,
             level5,
+            
         ]
 
         # debug variable
@@ -246,6 +250,10 @@ class Game(arcade.Window):
         red_door_texture = arcade.load_texture(
             f"{self.file_dir}/texture/red_door.png"
         )
+        glass_texture = arcade.load_texture(
+            f"{self.file_dir}/texture/glass.png"
+        )
+
         self.texture1 = self.ctx.texture(
             size=(ground_texture.width, ground_texture.height),
             components=4,
@@ -266,12 +274,18 @@ class Game(arcade.Window):
             components=4,
             data=red_door_texture.image.tobytes(),
         )
+        self.texture5 = self.ctx.texture(
+            size=(glass_texture.width, glass_texture.height),
+            components=4,
+            data=glass_texture.image.tobytes(),
+        )
 
         # Set the texture filtering mode to GL_NEAREST to remove blurriness
         self.texture1.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture2.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture3.filter = self.ctx.NEAREST, self.ctx.NEAREST
         self.texture4.filter = self.ctx.NEAREST, self.ctx.NEAREST
+        self.texture5.filter = self.ctx.NEAREST, self.ctx.NEAREST
 
     def setup(self):
         # Set the background color
@@ -359,6 +373,15 @@ class Game(arcade.Window):
 
         self.button_path = [f"{self.file_dir}/models/button.gltf",
                             f"{self.file_dir}/models/button.bin"]
+        
+        self.miniboss1_path = [f"{self.file_dir}/models/miniboss_sword.gltf",
+                               f"{self.file_dir}/models/miniboss_sword.bin"]
+        
+        self.miniboss2_path = [f"{self.file_dir}/models/miniboss_gun.gltf",
+                               f"{self.file_dir}/models/miniboss_gun.bin"]
+        
+        self.final_boss_path = [f"{self.file_dir}/models/final_boss.gltf",
+                                f"{self.file_dir}/models/final_boss.bin"]
 
         self.load_level(1)  # Load the first level
 
@@ -443,62 +466,80 @@ class Game(arcade.Window):
 
         self.state = "TITLE"  # Add game state for title screen
 
+        self.title_button_hover = False
+        self.title_button_pressed = False
+        self.title_button_rect = None  # (x, y, w, h)
+
     def on_draw(self):
+        # Show mouse on title screen, hide otherwise (except loading/paused handled elsewhere)
         if self.state == "TITLE":
+            self.set_mouse_visible(True)
             self.clear()
-            # Animated background gradient
+            # Subtle animated background gradient (less colorful)
             for i in range(0, self.screen_height, 4):
                 t = i / self.screen_height
-                # Animate the gradient with time
-                phase = self.time * 0.5
-                r = int(30 + 60 * (0.5 + 0.5 * math.sin(phase + t * 2)))
-                g = int(30 + 60 * (0.5 + 0.5 * math.sin(phase + t * 3 + 2)))
-                b = int(60 + 100 * (0.5 + 0.5 * math.sin(phase + t * 4 + 4)))
+                phase = self.time * 0.3
+                gray = int(30 + 40 * (0.5 + 0.5 * math.sin(phase + t * 1.5)))
                 arcade.draw_lrtb_rectangle_filled(
-                    0, self.screen_width, self.screen_height -
-                    i, self.screen_height - i - 4, (r, g, b)
+                    0, self.screen_width, self.screen_height - i, self.screen_height - i - 4, (gray, gray, gray + 10)
                 )
 
-            # Pulsing title color
-            pulse = 0.5 + 0.5 * math.sin(self.time * 2)
-            title_color = (
-                int(200 + 55 * pulse),
-                int(200 - 100 * pulse),
-                int(255 - 100 * pulse)
-            )
+            # Animated title: fade in/out and slight vertical movement
+            pulse = 0.5 + 0.5 * math.sin(self.time * 1.5)
+            y_offset = int(10 * math.sin(self.time * 0.8))
+            title_color = (180, 180, 200 + int(30 * pulse))
+            font_size = 48 + int(4 * pulse)
             arcade.draw_text(
                 "TERMINUS",
                 self.screen_width // 2,
-                self.screen_height // 2 + 60,
+                self.screen_height // 2 + 60 + y_offset,
                 title_color,
-                48 + int(8 * pulse),
+                font_size,
                 anchor_x="center",
                 anchor_y="center",
                 bold=True,
                 font_name="Kenney Future"
             )
-            # Pulsing "Press ENTER" text
-            enter_alpha = int(180 + 75 * (0.5 + 0.5 * math.sin(self.time * 3)))
+            # --- Draw clickable Start button ---
+            button_text = "Start Game"
+            button_font_size = 20
+            button_x = self.screen_width // 2
+            button_y = self.screen_height // 2 - 40
+            # Use arcade.create_text_image to get text size
+            text_img = arcade.create_text_image(button_text, arcade.color.WHITE, button_font_size, font_name="Kenney Future")
+            text_width, text_height = text_img.width, text_img.height
+            button_w = text_width + 120
+            button_h = text_height + 20
+            self.title_button_rect = (button_x - button_w // 2, button_y - button_h // 2, button_w, button_h)
+            # Detect hover/click color
+            if self.title_button_pressed:
+                color = arcade.color.RED
+            elif self.title_button_hover:
+                color = arcade.color.RED
+            else:
+                color = (180, 180, 200)
+            # Draw button background (optional, subtle)
+            arcade.draw_xywh_rectangle_filled(
+                self.title_button_rect[0], self.title_button_rect[1], button_w, button_h, (60, 60, 60, 80)
+            )
+            # Draw button border
+            arcade.draw_xywh_rectangle_outline(
+                self.title_button_rect[0], self.title_button_rect[1], button_w, button_h, color, 3
+            )
+            # Draw button text
             arcade.draw_text(
-                "Press ENTER to Start",
-                self.screen_width // 2,
-                self.screen_height // 2 - 20,
-                (220, 220, 220, enter_alpha),
-                26 + (self.time % 4) // 2,  # Pulsing size
+                button_text,
+                button_x,
+                button_y,
+                color,
+                button_font_size,
                 anchor_x="center",
                 anchor_y="center",
                 font_name="Kenney Future"
             )
-            # Optionally, add floating particles or shapes for extra flair
-            for i in range(12):
-                angle = self.time * 0.7 + i * (2 * math.pi / 12)
-                x = self.screen_width // 2 + int(180 * math.cos(angle))
-                y = self.screen_height // 2 + int(120 * math.sin(angle))
-                size = 8 + 4 * math.sin(self.time * 2 + i)
-                color = (100 + i * 10, 100 + i * 8, 180 + i * 6, 80)
-                arcade.draw_circle_filled(x, y, size, color)
-            return  # Don't draw the game if on the title screen
-
+            return
+        else:
+            self.set_mouse_visible(False)
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
             self.setup_textures()
 
@@ -554,7 +595,8 @@ class Game(arcade.Window):
         for obj in self.objects:
             if obj["id"] == 1:
                 # Bind the wall texture to the shader program
-                self.texture2.use(obj["texture"])
+                self.texture2.use(1)
+                self.texture5.use(5)
                 obj["program"]["texture"] = obj["texture"]
                 obj["program"]["opacity"] = obj["opacity"]
                 obj["program"]["model"] = translate @ rotate_y @ rotate_x @ rotate_z
@@ -588,7 +630,16 @@ class Game(arcade.Window):
             elif obj["id"] == 10:  # Render enemy objects
                 # Bind the GLTF program
                 obj["program"]["projection"] = self.proj
-
+                
+                if obj["type"] == 4: 
+                    # For minibosses, use the miniboss shader program
+                    if obj["object"].get_form() == 1:  # If the miniboss is a sword miniboss
+                        geometry = obj["geometry"][0]
+                    elif obj["object"].get_form() == 2:  # If the miniboss is a gun miniboss
+                        geometry = obj["geometry"][1]
+                else: 
+                    geometry = obj["geometry"]
+                    
                 # Rotate the object around the Y-axis
                 object_rotation_matrix = (Mat4.from_rotation(
                     obj["object"].get_rotation().y, (0, 1, 0)) - Mat4.from_translation(Vec3(0, 0, 0)))  # Rotate around Y-axis
@@ -602,21 +653,15 @@ class Game(arcade.Window):
                     (translation + object_rotation_matrix)
                     @ (rotate_y @ rotate_x @ rotate_z))
 
-                for i, enemy_geometry in enumerate(obj["geometry"]):
-
-                    # Set material properties
-                    if i == 2:
-                        # change the color of the enemy
-                        # Health factor for color
-                        h_factor = obj["object"].get_health(
-                        ) / obj["object"].get_max_health()
-                        base_color = enemy_geometry["base_color_factor"]
-
-                        enemy_geometry["base_color_factor"] = (base_color[0],
-                                                               base_color[1], base_color[2], 0.7 * h_factor + 0.3)
+                for i, enemy_geometry in enumerate(geometry):
 
                     obj["program"]["base_color_factor"] = enemy_geometry["base_color_factor"]
-
+                    
+                    # Set material properties
+                    if i == 0 and (obj["type"] == 3):
+                        # For enemy3, use the special shader program
+                        obj["program"]["base_color_factor"] = (0.6, 0.1, 0.1, 1.0)  # Red color
+                        
                     # Render the geometry
                     enemy_geometry["geometry"].render(obj["program"])
 
@@ -798,81 +843,6 @@ class Game(arcade.Window):
                     color, hitmarker_thickness
                 )
 
-            # WEAPON SELECTION
-
-            # # Draw weapon selection icons: equipped weapon left (big), unequipped right (small)
-            # icon_scale_selected = 3.0
-            # icon_scale_unselected = 2.2
-            # icon_padding = 30
-
-            # # Calculate icon positions
-            # left_x = self.screen_width // 36
-            # left_y = self.screen_height // 28
-
-            # # Determine which weapon is equipped
-            # if self.weapon_manager.current == "REVOLVER":
-            #     # Equipped: revolver left, shotgun right
-            #     left_icon = self.revolver_icon
-            #     left_border = arcade.color.YELLOW
-            #     left_scale = icon_scale_selected
-
-            #     right_icon = self.shotgun_icon
-            #     right_border = arcade.color.GRAY
-            #     right_scale = icon_scale_unselected
-
-            #     right_x = left_x + int(self.revolver_icon.width * left_scale) + icon_padding
-            # elif self.weapon_manager.current == "SHOTGUN":
-            #     # Equipped: shotgun left, revolver right
-            #     left_icon = self.shotgun_icon
-            #     left_border = arcade.color.YELLOW
-            #     left_scale = icon_scale_selected
-
-            #     right_icon = self.revolver_icon
-            #     right_border = arcade.color.GRAY
-            #     right_scale = icon_scale_unselected
-
-            #     # Move revolver further right because shotgun is longer
-            #     right_x = left_x + int(self.shotgun_icon.width * left_scale) + icon_padding + 20  # Add extra offset if needed
-
-            # right_y = left_y
-
-            # # Draw left (equipped) icon
-            # arcade.draw_xywh_rectangle_filled(
-            #     left_x, left_y,
-            #     int(left_icon.width * left_scale), int(left_icon.height * left_scale),
-            #     (30, 30, 30, 200)
-            # )
-            # arcade.draw_texture_rectangle(
-            #     left_x + int(left_icon.width * left_scale // 2),
-            #     left_y + int(left_icon.height * left_scale // 2),
-            #     int(left_icon.width * left_scale), int(left_icon.height * left_scale),
-            #     left_icon
-            # )
-            # arcade.draw_rectangle_outline(
-            #     left_x + int(left_icon.width * left_scale // 2),
-            #     left_y + int(left_icon.height * left_scale // 2),
-            #     int(left_icon.width * left_scale), int(left_icon.height * left_scale),
-            #     left_border, 3
-            # )
-
-            # # Draw right (unequipped) icon
-            # arcade.draw_xywh_rectangle_filled(
-            #     right_x, right_y,
-            #     int(right_icon.width * right_scale), int(right_icon.height * right_scale),
-            #     (30, 30, 30, 200)
-            # )
-            # arcade.draw_texture_rectangle(
-            #     right_x + int(right_icon.width * right_scale // 2),
-            #     right_y + int(right_icon.height * right_scale // 2),
-            #     int(right_icon.width * right_scale), int(right_icon.height * right_scale),
-            #     right_icon
-            # )
-            # arcade.draw_rectangle_outline(
-            #     right_x + int(right_icon.width * right_scale // 2),
-            #     right_y + int(right_icon.height * right_scale // 2),
-            #     int(right_icon.width * right_scale), int(right_icon.height * right_scale),
-            #     right_border, 3
-            # )
             # ======================INTERACTIONS========================== #
             if len(self.interactions) > 0:
                 if self.interactions[0]["active"]:
@@ -919,6 +889,61 @@ class Game(arcade.Window):
                     self.screen_width // 2 - (self.screen_width // 8) / 1.7 + (self.screen_width // 8) / 5 * i, self.screen_height // 36, self.screen_width // 8 / 5, self.screen_height // 32, arcade.color.BLACK, 4)
             arcade.draw_rectangle_outline(
                 self.screen_width // 2, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.BLACK, 4)
+
+            # ======================MINIBOSS HEALTH====================== #
+            minibosses = [enemy["object"] for enemy in self.enemies if hasattr(enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "Miniboss" and not enemy["object"].is_dead() and enemy.get("spawned")]  # Only show if spawned
+            if minibosses:
+                miniboss = minibosses[0]  # Show the first alive miniboss
+                bar_w = self.screen_width // 2
+                bar_h = 32
+                bar_x = self.screen_width // 2 - bar_w // 2
+                bar_y = self.screen_height - 60
+                # Background
+                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, bar_w, bar_h, (40, 0, 0, 200))
+                # Health
+                health_ratio = miniboss.health / miniboss.max_health
+                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, int(bar_w * health_ratio), bar_h, arcade.color.RED)
+                # Border
+                arcade.draw_xywh_rectangle_outline(bar_x, bar_y, bar_w, bar_h, arcade.color.BLACK, 4)
+                # Text
+                arcade.draw_text(f"MINIBOSS HP: {miniboss.health:.0f} / {miniboss.max_health}",
+                                self.screen_width // 2, bar_y + bar_h // 2,
+                                arcade.color.WHITE, 18, anchor_x="center", anchor_y="center", bold=True)
+
+            # ======================FINALBOSS HEALTH====================== #
+            finalbosses = [enemy["object"] for enemy in self.enemies if hasattr(enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "FinalBoss" and not enemy["object"].is_dead() and enemy.get("spawned")]  # Only show if spawned
+            if finalbosses:
+                finalboss = finalbosses[0]  # Show the first alive final boss
+                bar_w = self.screen_width // 2
+                bar_h = 36
+                bar_x = self.screen_width // 2 - bar_w // 2
+                bar_y = self.screen_height - 110
+                # Draw 3 phase segments (backgrounds)
+                phase1_w = int(bar_w * (1/3))
+                phase2_w = int(bar_w * (1/3))
+                phase3_w = bar_w - phase1_w - phase2_w
+                # Phase backgrounds
+                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, phase1_w, bar_h, (60, 0, 0, 180))
+                arcade.draw_xywh_rectangle_filled(bar_x + phase1_w, bar_y, phase2_w, bar_h, (60, 30, 0, 180))
+                arcade.draw_xywh_rectangle_filled(bar_x + phase1_w + phase2_w, bar_y, phase3_w, bar_h, (0, 40, 80, 180))
+                # Health overlay (color by phase)
+                health_ratio = finalboss.health / finalboss.max_health
+                if finalboss.phase == 1:
+                    color = arcade.color.RED
+                elif finalboss.phase == 2:
+                    color = arcade.color.ORANGE
+                else:
+                    color = arcade.color.BLUE
+                arcade.draw_xywh_rectangle_filled(bar_x, bar_y, int(bar_w * health_ratio), bar_h, color)
+                # Border
+                arcade.draw_xywh_rectangle_outline(bar_x, bar_y, bar_w, bar_h, arcade.color.BLACK, 4)
+                # Phase dividers
+                arcade.draw_line(bar_x + phase1_w, bar_y, bar_x + phase1_w, bar_y + bar_h, arcade.color.BLACK, 3)
+                arcade.draw_line(bar_x + phase1_w + phase2_w, bar_y, bar_x + phase1_w + phase2_w, bar_y + bar_h, arcade.color.BLACK, 3)
+                # Text
+                arcade.draw_text(f"FINAL BOSS PHASE {finalboss.phase} HP: {finalboss.health:.0f} / {finalboss.max_health}",
+                                self.screen_width // 2, bar_y + bar_h // 2,
+                                arcade.color.WHITE, 20, anchor_x="center", anchor_y="center", bold=True)
 
             # ========================GAME_INFO========================== #
 
@@ -984,14 +1009,13 @@ class Game(arcade.Window):
             print(f"Error drawing texture: {e}")
 
     def on_update(self, delta_time: float):
+        # Always update time, even on title screen
+        self.time += delta_time
         if self.state == "TITLE":
             return  # Skip updating the game when on the title screen
 
         if self.is_paused:
             return  # Skip updating the game when paused
-
-        # Update the time
-        self.time += delta_time
 
         if not self.weapon_manager.isLoaded:
             # If textures are not loaded, skip the update
@@ -1042,16 +1066,16 @@ class Game(arcade.Window):
 
         try:
             # Check if all enemies are dead
-            room1_dead = all(
+            room1_dead = (1 in self.activated_rooms) and all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 1
             )
-            room2_dead = all(
+            room2_dead = (2 in self.activated_rooms) and all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 2
             )
-            room3_dead = all(
+            room3_dead = (3 in self.activated_rooms) and all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 3
             )
-            room4_dead = all(
+            room4_dead = (4 in self.activated_rooms) and all(
                 enemy["object"].is_dead() for enemy in self.enemies if enemy.get("room", 0) == 4
             )
             # print(f"Enemies in Room 1 Dead: {room1_dead}, Room 2 Dead: {room2_dead}, Room 3 Dead: {room3_dead}, Room 4 Dead: {room4_dead}")
@@ -1514,6 +1538,12 @@ class Game(arcade.Window):
                     door["opacity"] = 0.5
 
     def on_mouse_motion(self, x, y, dx, dy):
+        if self.state == "TITLE" and self.title_button_rect:
+            bx, by, bw, bh = self.title_button_rect
+            if bx <= x <= bx + bw and by <= y <= by + bh:
+                self.title_button_hover = True
+            else:
+                self.title_button_hover = False
         if self.mouse_locked:
             self.camera_rot.y += dx * self.mouse_sensitivity
             self.camera_rot.x -= dy * self.mouse_sensitivity  # Invert pitch adjustment
@@ -1522,9 +1552,11 @@ class Game(arcade.Window):
         pass
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if not self.isLoaded:
-            # If textures are not loaded, skip key presses
-            return
+        if self.state == "TITLE" and self.title_button_rect:
+            bx, by, bw, bh = self.title_button_rect
+            if bx <= x <= bx + bw and by <= y <= by + bh:
+                self.title_button_pressed = True
+            return  # Prevent shooting when clicking the start button
         if button == arcade.MOUSE_BUTTON_LEFT:
             if self.weapon_manager.shoot():
                 if self.weapon_manager.current.type == "REVOLVER":
@@ -1624,6 +1656,14 @@ class Game(arcade.Window):
             self.is_ADS = True
 
     def on_mouse_release(self, x, y, button, modifiers):
+        if self.state == "TITLE" and self.title_button_rect:
+            bx, by, bw, bh = self.title_button_rect
+            if bx <= x <= bx + bw and by <= y <= by + bh and self.title_button_pressed:
+                self.state = "GAME"
+                self.mouse_locked = True
+                self.set_mouse_visible(False)
+                self.set_exclusive_mouse(True)
+            self.title_button_pressed = False
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.weapon_manager.ADS(False)
             self.is_ADS = False
@@ -1787,6 +1827,7 @@ class Game(arcade.Window):
         for enemy in self.enemies:
             if enemy.get("room", 1) == room_number and enemy not in self.objects:
                 self.objects.append(enemy)
+                enemy["spawned"] = True  # Mark as spawned when activated
                 if "geometry" not in enemy:
                     if enemy["type"] == 1:
                         enemy["geometry"] = gltf_utils.load_gltf(
@@ -1797,6 +1838,16 @@ class Game(arcade.Window):
                     elif enemy["type"] == 3:
                         enemy["geometry"] = gltf_utils.load_gltf(
                             self, self.enemy1_gltf, self.enemy1_bin_data, scale=Vec3(1.2, 0.7, 1.2))
+                    elif enemy["type"] == 4:
+                        # mini boss enemy
+                        enemy["geometry"] = [
+                            gltf_utils.load_gltf(self, self.miniboss1_gltf, self.miniboss1_bin_data, scale=Vec3(4, 4, 4)),
+                            gltf_utils.load_gltf(self, self.miniboss2_gltf, self.miniboss2_bin_data, scale=Vec3(4, 4, 4))
+                        ]
+                    elif enemy["type"] == 5:
+                        # final boss enemy
+                        enemy["geometry"] = gltf_utils.load_gltf(
+                            self, self.final_boss_gltf, self.final_boss_bin_data, scale=Vec3(3, 3, 3))
 
     def load_level(self, level):
         self.isLoaded = False
@@ -1806,14 +1857,21 @@ class Game(arcade.Window):
 
         # Add the walls to the list of objects
         # Add geometry to the walls
+       
         for wall in self.walls:
             self.objects.append(wall)
             wall_buffer = self.ctx.buffer(data=array('f', wall["buffer_data"]))
             wall["id"] = 1
-            wall["texture"] = 1  # Set texture ID for walls
+            # if no texture is provided, use a default texture
+            if "texture" not in wall:
+                wall["texture"] = 1  # Set texture ID for walls
+            if "opacity" not in wall:
+                wall["opacity"] = 1.0  # Set default opacity for walls    
+                
             # Use the same shader program for walls
             wall["program"] = self.plane
-            wall["opacity"] = 1.0  # Set default opacity for walls
+            
+           
             wall["geometry"] = self.ctx.geometry(
                 content=[BufferDescription(
                     wall_buffer, "3f 2f", ("in_pos", "in_uv"))],
@@ -1847,13 +1905,27 @@ class Game(arcade.Window):
 
         self.enemy1_gltf = GLTF2().load(self.enemy1_path[0])
         self.enemy2_gltf = GLTF2().load(self.enemy2_path[0])
-
+        
         with open(self.enemy1_path[1], "rb") as f:
             self.enemy1_bin_data = f.read()
 
         with open(self.enemy2_path[1], "rb") as f:
             self.enemy2_bin_data = f.read()
+            
+        # mini boss
+        self.miniboss1_gltf = GLTF2().load(self.miniboss1_path[0])
+        self.miniboss2_gltf = GLTF2().load(self.miniboss2_path[0])
 
+        with open(self.miniboss1_path[1], "rb") as f:
+            self.miniboss1_bin_data = f.read()
+        with open(self.miniboss2_path[1], "rb") as f:
+            self.miniboss2_bin_data = f.read()
+        
+        # final boss
+        self.final_boss_gltf = GLTF2().load(self.final_boss_path[0])
+        with open(self.final_boss_path[1], "rb") as f:
+            self.final_boss_bin_data = f.read()
+    
         # Room triggers
         self.room_triggers = self.levels[level - 1].room_triggers()
         self.activated_rooms = set()
@@ -1867,6 +1939,9 @@ class Game(arcade.Window):
             self.objects.append(button)
             button["geometry"] = gltf_utils.load_gltf(
                 self, self.button_gltf, self.button_bin_data, scale=Vec3(0.3, 0.16, 0.3))
+        # Add a 'spawned' property to all enemies, miniboss is only 'spawned' when activated
+        for enemy in self.enemies:
+            enemy["spawned"] = False
         self.isLoaded = True
 
     def exit_level(self):

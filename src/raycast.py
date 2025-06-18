@@ -165,8 +165,13 @@ def raycast(ray_start, ray_direction, objects, ray_length=100, use_gpu=False):
                 return obj, False
 
         if obj["id"] == 10:
+            if obj["type"] == 4:  # Mini boss
+                # For minibosses, we need to check geometry being used
+                geometry = obj["geometry"][0] if obj["object"].get_form() == 1 else obj["geometry"][1]
+            else:
+                geometry = obj["geometry"]
             # gltf model
-            body = obj["geometry"][0]
+            body = geometry[0]
             positions = body["positions"]  # Use the mesh's vertex positions
             indices = body["indices"] if "indices" in body else None
             model_origin = obj["object"].get_world_position()

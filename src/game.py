@@ -26,6 +26,8 @@ import level6
 import gltf_utils
 import raycast
 import weapons
+from title_screen import TitleScreenView
+from shop_screen import ShopScreenView
 
 # Constants for screen dimensions
 SCREEN_WIDTH = 1280
@@ -34,10 +36,10 @@ SCREEN_HEIGHT = 720
 
 class Player:
     def __init__(self):
-        self.health = 5  # Player's health
         self.max_health = 5  # Player's maximum health
+        self.health = self.max_health  # Player's health
         self.is_alive = True  # Player's alive status
-        self.currency = 0  # Player's currency
+        self.currency = 5000  # Player's currency
 
     def apply_damage(self, damage):
         """
@@ -469,18 +471,59 @@ class Game(arcade.Window):
         # Each ray is (start: Vec3, end: Vec3, color: tuple)
         self.debug_rays = []
 
-        self.state = "TITLE"  # Add game state for title screen
+        # Persistent shop items for upgrades
+        self.shop_items = [
+            {"name": "Health +1", "base_price": 50, "price": 50, "count": 0},
+            {"name": "REVOLVER DMG Up", "base_price": 100, "price": 100, "count": 0},
+            {"name": "SHOTGUN DMG Up", "base_price": 100, "price": 100, "count": 0},
+            {"name": "REVOLVER HS Mult Up", "base_price": 120, "price": 120, "count": 0},
+            {"name": "SHOTGUN HS Mult Up", "base_price": 120, "price": 120, "count": 0},
+        ]
 
-        self.title_button_hover = False
-        self.title_button_pressed = False
-        self.title_button_rect = None  # (x, y, w, h)
-        self.level_select_rects = []  # List of (rect, level_num)
-        self.selected_level = 1
+        self.state = "TITLE"  # Add game state for title screen
+        self.title_screen = TitleScreenView(self)
+        self.shop_screen = ShopScreenView(self)
+        self.selected_level = 1  # Default selected level for title/level select
+        self.set_exclusive_mouse(False)
+
+        
+    def set_state(self, new_state):
+        print(f"Changing state from {self.state} to {new_state}")
+        self.state = new_state
+        if new_state == "TITLE":
+            self.mouse_locked = False
+            self.set_exclusive_mouse(False)
+        elif new_state == "GAME":
+            self.mouse_locked = True
+            self.set_exclusive_mouse(self.mouse_locked)
+        elif new_state == "SHOP":
+            self.mouse_locked = False
+            self.set_exclusive_mouse(False)
+
+    def draw_custom_cursor(self):
+        # Only draw if not in exclusive mouse mode
+        if getattr(self, 'mouse_locked', False):
+            return
+        x, y = self._last_mouse_pos if hasattr(self, '_last_mouse_pos') else (self.screen_width // 2, self.screen_height // 2)
+        arcade.draw_circle_filled(x, y, 10, arcade.color.YELLOW)
 
     def on_draw(self):
+        if self.state == "TITLE":
+            self.title_screen.on_draw()
+            # Draw custom cursor on title screen if not exclusive
+            if not getattr(self, 'mouse_locked', False):
+                if hasattr(self.title_screen, '_last_mouse_pos'):
+                    x, y = self.title_screen._last_mouse_pos
+                else:
+                    x, y = self.screen_width // 2, self.screen_height // 2
+                arcade.draw_circle_filled(x, y, 10, arcade.color.YELLOW)
+            return
+        if self.state == "SHOP":
+            self.shop_screen.on_draw()
+            return
+
         # Show mouse on title screen, hide otherwise (except loading/paused handled elsewhere)
         if self.state == "TITLE":
-            self.set_mouse_visible(True)
             self.clear()
             # Subtle animated background gradient (less colorful)
             for i in range(0, self.screen_height, 4):
@@ -570,8 +613,6 @@ class Game(arcade.Window):
             arcade.draw_text("Select Level", button_x, select_y+70, arcade.color.LIGHT_GRAY,
                             16, anchor_x="center", anchor_y="center", font_name="Kenney Future")
             return
-        else:
-            self.set_mouse_visible(False)
         if self.texture1 is None or self.texture2 is None or self.texture3 is None:
             self.setup_textures()
 
@@ -759,9 +800,8 @@ class Game(arcade.Window):
                 anchor_y="center",
                 bold=True,
             )
-            # Draw exit option
             arcade.draw_text(
-                "Press ESC to Resume | Press Q to Exit",
+                "Press R to Retry | T for Title | Q to Exit | ESC to Resume",
                 self.screen_width // 2,
                 self.screen_height // 2 - 60,
                 arcade.color.LIGHT_GRAY,
@@ -769,6 +809,8 @@ class Game(arcade.Window):
                 anchor_x="center",
                 anchor_y="center",
             )
+            # Draw custom cursor in pause menu if not exclusive
+            self.draw_custom_cursor()
             return  # Skip drawing the rest of the game when paused
 
         # Death screen
@@ -788,7 +830,7 @@ class Game(arcade.Window):
                 bold=True,
             )
             arcade.draw_text(
-                "Press Q to Exit",
+                "Press R to Retry | T for Title | Q to Exit",
                 self.screen_width // 2,
                 self.screen_height // 2 - 40,
                 arcade.color.LIGHT_GRAY,
@@ -796,6 +838,8 @@ class Game(arcade.Window):
                 anchor_x="center",
                 anchor_y="center",
             )
+            # Draw custom cursor in death screen if not exclusive
+            self.draw_custom_cursor()
             return
         # Boss dead: end game and go to win screen, wait for SPACE to return to title
         finalbosses = [enemy["object"] for enemy in self.enemies if hasattr(
@@ -958,19 +1002,26 @@ class Game(arcade.Window):
 
             # ========================INFO========================== #
             # display health bar
-            arcade.draw_ellipse_filled(
-                self.screen_width // 2, self.screen_height // 22, self.screen_width // 8, self.screen_height // 14, arcade.color.DARK_GRAY)
-            arcade.draw_text("Health", self.screen_width // 2, self.screen_height // 16,
+            bar_w = self.screen_width // 8
+            bar_h = self.screen_height // 14
+            bar_x = self.screen_width // 2
+            bar_y = self.screen_height // 32
+            # Draw the background ellipse
+            arcade.draw_ellipse_filled(bar_x, bar_y + 10, bar_w, bar_h, arcade.color.DARK_GRAY)
+            arcade.draw_text("Health", bar_x, self.screen_height // 16,
                              arcade.color.BLACK, 12, font_name="Kenney Future", anchor_x="center", anchor_y="center", bold=True)
-            arcade.draw_xywh_rectangle_filled(
-                self.screen_width // 2 - (self.screen_width // 8) / 2, self.screen_height // 22 - (self.screen_height // 28), self.screen_width // 8 * (self.player.health / self.player.max_health), self.screen_height // 32, arcade.color.RED)
-
-            for i in range(1, 6):
-                # evenly cut the health bar into 5 parts
-                arcade.draw_rectangle_outline(
-                    self.screen_width // 2 - (self.screen_width // 8) / 1.7 + (self.screen_width // 8) / 5 * i, self.screen_height // 36, self.screen_width // 8 / 5, self.screen_height // 32, arcade.color.BLACK, 4)
-            arcade.draw_rectangle_outline(
-                self.screen_width // 2, self.screen_height // 36, self.screen_width // 8, self.screen_height // 32, arcade.color.BLACK, 4)
+            # Draw the filled health bar (more segments, same overall size)
+            segment_count = max(self.player.max_health, 5)  # At least 10 segments for smoothness
+            segment_gap = 2
+            segment_w = (bar_w - (segment_count - 1) * segment_gap) / segment_count
+            segment_h = bar_h * 0.5
+            start_x = bar_x - bar_w // 2 + segment_w // 2
+            arcade.draw_rectangle_filled(bar_x, self.screen_height // 36, bar_w, bar_h * 0.5, arcade.color.BLACK)
+            for i in range(segment_count):
+                seg_x = start_x + i * (segment_w + segment_gap)
+                color = arcade.color.RED if i < self.player.health else arcade.color.GRAY
+                arcade.draw_rectangle_filled(seg_x, bar_y, segment_w, segment_h, color)
+            arcade.draw_rectangle_outline(bar_x, self.screen_height // 36, bar_w, bar_h * 0.5, arcade.color.BLACK, 4)
 
             # display currency
             arcade.draw_ellipse_filled(
@@ -1111,7 +1162,11 @@ class Game(arcade.Window):
         # Always update time, even on title screen
         self.time += delta_time
         if self.state == "TITLE":
+            self.title_screen.on_update(delta_time)
             return  # Skip updating the game when on the title screen
+        if self.state == "SHOP":
+            self.shop_screen.on_update(delta_time)
+            return  # Skip updating the game when in the shop
 
         if self.is_paused:
             return  # Skip updating the game when paused
@@ -1126,7 +1181,6 @@ class Game(arcade.Window):
         self.objects.sort(key=self.get_distance, reverse=True)
 
         # set mouse active
-        self.set_mouse_visible(not self.mouse_locked)
         self.set_exclusive_mouse(self.mouse_locked)
 
         # Check for player collision with room triggers (AABB, with z thickness)
@@ -1512,42 +1566,55 @@ class Game(arcade.Window):
             self.camera_rot.x = math.pi / 2
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.O:
+            print(f"Current state: {self.state}")
+        
         if self.state == "WIN":
             if key == arcade.key.ENTER or key == arcade.key.RETURN:
-                self.state = "TITLE"
+                self.set_state("TITLE")
                 return
-            # Disable ESC/pause during win screen
             return
         if self.state == "TITLE":
-            if key == arcade.key.LEFT:
-                self.selected_level = max(1, self.selected_level-1)
-                return
-            elif key == arcade.key.RIGHT:
-                self.selected_level = min(
-                    len(self.levels), self.selected_level+1)
-                return
-            elif key == arcade.key.ENTER or key == arcade.key.RETURN:
-                print(f"Selected level: {self.selected_level}")
-                self.load_level(self.selected_level)
-                self.state = "GAME"
-                return
+            self.title_screen.on_key_press_TITLE(key, modifiers)
+            return  # Skip key presses when on the title screen
+        if self.state == "SHOP":
+            self.shop_screen.on_key_press_SHOP(key, modifiers)
+            return
+           
         # Exit from pause or death screen
         if self.is_paused or (hasattr(self.player, "health") and self.player.health <= 0):
             if key == arcade.key.Q:
                 arcade.exit()
                 return
-            if self.is_paused and key == arcade.key.ESCAPE:
-                self.is_paused = False
-                self.mouse_locked = True
-                self.set_mouse_visible(False)
-                self.set_exclusive_mouse(True)
-                return
+            if hasattr(self.player, "health") and self.player.health <= 0:
+                if key == arcade.key.R:
+                    # Retry: reload current level
+                    self.reload_level()
+                    return
+                elif key == arcade.key.T:
+                    # Go to title screen
+                    self.set_state("TITLE")
+                    return
+            if self.is_paused:
+                if key == arcade.key.R:
+                    self.reload_level()
+                    self.is_paused = False
+                    self.mouse_locked = True
+                    self.set_exclusive_mouse(True)
+                    return
+                elif key == arcade.key.T:
+                    self.exit_level()
+                    return
+                elif key == arcade.key.ESCAPE:
+                    self.is_paused = False
+                    self.mouse_locked = True
+                    self.set_exclusive_mouse(True)
+                    return
             return  # Ignore other keys while paused or dead
 
-        if key == arcade.key.ESCAPE:
+        if key == arcade.key.ESCAPE and self.state != "TITLE":
             self.is_paused = not self.is_paused
             self.mouse_locked = not self.is_paused
-            self.set_mouse_visible(not self.mouse_locked)
             self.set_exclusive_mouse(self.mouse_locked)
             return  # Don't process other actions when toggling pause
 
@@ -1582,7 +1649,6 @@ class Game(arcade.Window):
                 self.vertical_velocity = -0.2  # Set jump power
         elif key == arcade.key.ESCAPE:
             self.mouse_locked = not self.mouse_locked
-            self.set_mouse_visible(not self.mouse_locked)
             self.set_exclusive_mouse(self.mouse_locked)  # Toggle mouse capture
 
         elif key == arcade.key.KEY_1:
@@ -1648,27 +1714,27 @@ class Game(arcade.Window):
                     door["opacity"] = 0.5
 
     def on_mouse_motion(self, x, y, dx, dy):
-        if self.state == "TITLE" and self.title_button_rect:
-            bx, by, bw, bh = self.title_button_rect
-            if bx <= x <= bx + bw and by <= y <= by + bh:
-                self.title_button_hover = True
-            else:
-                self.title_button_hover = False
+        if self.state == "TITLE":
+            self.title_screen.on_mouse_motion(x, y, dx, dy)
+            return
         if self.mouse_locked:
             self.camera_rot.y += dx * self.mouse_sensitivity
             self.camera_rot.x -= dy * self.mouse_sensitivity  # Invert pitch adjustment
+        self._last_mouse_pos = (x, y)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         pass
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if self.state == "TITLE" and self.title_button_rect:
-            bx, by, bw, bh = self.title_button_rect
-            if bx <= x <= bx + bw and by <= y <= by + bh:
-                print(f"Selected level: {self.selected_level}")
-                self.load_level(self.selected_level)
-                self.state = "GAME"
-            return  # Prevent shooting when clicking the start button
+        if self.state == "TITLE":
+            self.title_screen.on_mouse_press(x, y, button, modifiers)
+            return
+        elif self.state == "SHOP":
+            self.shop_screen.on_mouse_press(x, y, button, modifiers)
+            return  # Skip mouse presses when in the shop
+        
+            
+
         if button == arcade.MOUSE_BUTTON_LEFT:
             if self.weapon_manager.shoot():
                 if self.weapon_manager.current.type == "REVOLVER":
@@ -1680,11 +1746,11 @@ class Game(arcade.Window):
                         -self.camera_pos.y,
                         -self.camera_pos.z
                     )
-
+                    
                     ray_direction = Vec3(
                         math.sin(self.camera_rot.y),
                         -math.sin(self.camera_rot.x),
-                        -math.cos(self.camera_rot.y),
+                        -math.cos(self.camera_rot.y)
                     )
 
                     raycast_result, hs = raycast.raycast(
@@ -1703,13 +1769,13 @@ class Game(arcade.Window):
                             print("Hit enemy!")
                             if hs:
                                 raycast_result["object"].apply_damage(
-                                    60)  # Apply 20 damage for headshot
+                                    self.weapon_manager.current.damage * self.weapon_manager.current.HS_multiplier) 
                                 print("Headshot!")
                                 self.HS_hitmarker = True
                                 self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
                             else:
                                 raycast_result["object"].apply_damage(
-                                    30)  # Apply 10 damage if no headshot
+                                    self.weapon_manager.current.damage)  
                                 self.hitmarker = True
                                 self.hitmarker_timer = self.time + 0.2  # Show hitmarker for 0.2 seconds
                         elif raycast_result["id"] == 1 and self.debugMode:
@@ -1740,20 +1806,18 @@ class Game(arcade.Window):
                                 random.uniform(-0.1, 0.1),
                                 random.uniform(-0.1, 0.1),
                                 random.uniform(-0.1, 0.1)
-                            ), (random.random(), random.random(),
-                                random.random()), self.time
-                            )
+                            ), (random.random(), random.random(), random.random()), self.time)
                         )
                         if raycast_result:
                             if raycast_result["id"] == 10:
                                 print("Hit enemy!")
                                 if hs:
-                                    raycast_result["object"].apply_damage(20)
+                                    raycast_result["object"].apply_damage(self.weapon_manager.current.damage * self.weapon_manager.current.HS_multiplier)
                                     print("Headshot!")
                                     self.HS_hitmarker = True
                                     self.hitmarker_timer = self.time + 0.2
                                 else:
-                                    raycast_result["object"].apply_damage(10)
+                                    raycast_result["object"].apply_damage(self.weapon_manager.current.damage)
                                     self.hitmarker = True
                                     self.hitmarker_timer = self.time + 0.2
                             elif raycast_result["id"] == 1 and self.debugMode:
@@ -1768,14 +1832,9 @@ class Game(arcade.Window):
             self.is_ADS = True
 
     def on_mouse_release(self, x, y, button, modifiers):
-        if self.state == "TITLE" and self.title_button_rect:
-            bx, by, bw, bh = self.title_button_rect
-            if bx <= x <= bx + bw and by <= y <= by + bh and self.title_button_pressed:
-                self.state = "GAME"
-                self.mouse_locked = True
-                self.set_mouse_visible(False)
-                self.set_exclusive_mouse(True)
-            self.title_button_pressed = False
+        if self.state == "TITLE":
+            self.title_screen.on_mouse_release(x, y, button, modifiers)
+            return
         if button == arcade.MOUSE_BUTTON_RIGHT:
             self.weapon_manager.ADS(False)
             self.is_ADS = False
@@ -2058,11 +2117,42 @@ class Game(arcade.Window):
             enemy["spawned"] = False
         self.isLoaded = True
 
-    def exit_level(self):
-        # Logic to exit the level, e.g., load the next level or return to the main menu
+    def reload_level(self):
+        # Logic to reload the level
+        print("Reloading level...")
+        self.objects.clear()
+        self.walls.clear()
+        self.doors.clear()
+        self.exit_portal = None
+        self.enemies.clear()
+        self.activated_rooms = set()
         self.isLoaded = False
+        self.player = Player()  # Reset player
+        self.camera_pos = Vec3(0, -4, -5)
+        self.camera_rot = Vec3(0, 0, 0)
+        self.is_on_ground = True
+        self.movement_vector = self.forward.scale(self.current_speed)
+        self.load_level(self.selected_level)
+        self.isLoaded = True
+        
+    def exit_level(self):
+        # Logic to exit the level, e.g., go to the next level or end the game
         print("Exiting level...")
-        self.change_level(2)
+        self.objects.clear()
+        self.walls.clear()
+        self.doors.clear()
+        self.exit_portal = None
+        self.enemies.clear()
+        self.activated_rooms = set()
+        self.isLoaded = False
+        self.player = Player()  # Reset player
+        self.camera_pos = Vec3(0, -4, -5)
+        self.camera_rot = Vec3(0, 0, 0)
+        self.is_on_ground = True
+        self.is_paused = False
+        self.movement_vector = self.forward.scale(self.current_speed)
+        # go to title screen
+        self.set_state("TITLE")
 
     def change_level(self, level):
         # Clear existing objects and walls

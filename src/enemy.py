@@ -684,11 +684,11 @@ class Miniboss(Enemy):
         # seconds between form switches (now 10s)
         self.form_switch_cooldown = 3.0
         self.last_form_switch = time.time()
-        self.health = 1200
-        self.max_health = 1200
+        self.health = 1500
+        self.max_health = 1500
         # Sword form: melee
         self.sword_attack_range = 5.0
-        self.sword_attack_damage = 20
+        self.sword_attack_damage = 1
         self.sword_speed = 0.4
         self.sword_dash_speed = 1.0
         self.sword_dash_cooldown = 2.0

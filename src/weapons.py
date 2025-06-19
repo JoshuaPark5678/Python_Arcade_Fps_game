@@ -54,7 +54,7 @@ class Weapon:
 class Revolver(Weapon):
     def __init__(self, game):
         super().__init__(game)
-        self.type = "REVOLVER" 
+        self.type = "REVOLVER"
         self.max_ammo = 5
         self.shoot_textures = []
         self.ADS_shoot_textures = []
@@ -71,11 +71,13 @@ class Revolver(Weapon):
         self.chamber = [1] * self.max_ammo
         self.cylinder_spin = 0  # Spin of the cylinder
         self.spin_aim = 0  # The cylinder spin till reaching the aim
-        
         self.sound_volume = 0.2  # Default sound volume
         self.shoot_sound = None
         self.reload_sound = None
-        # ...add more as needed
+        # Upgradeable stats
+        self.damage = 10
+        self.HS_multiplier = 1.5
+        # ...add more as needed...
 
     def draw_cylinder(self):
         # display CYLINDER
@@ -286,7 +288,7 @@ class Revolver(Weapon):
 class Shotgun(Weapon):
     def __init__(self, game):
         super().__init__(game)
-        self.type = "SHOTGUN" 
+        self.type = "SHOTGUN"
         self.max_ammo = 4
         self.shoot_textures = []
         self.ADS_shoot_textures = []
@@ -301,11 +303,13 @@ class Shotgun(Weapon):
         self.time_since_last_frame = 0
         self.animation_speed = 0.03
         self.chamber = [1] * self.max_ammo
-        
         self.sound_volume = 0.2  # Default sound volume
         self.shoot_sound = None
         self.reload_sound = None
-        # ...add more as needed
+        # Upgradeable stats
+        self.damage = 5
+        self.HS_multiplier = 1.5
+        # ...add more as needed...
 
     def draw(self):
         try:

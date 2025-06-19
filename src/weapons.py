@@ -211,7 +211,7 @@ class Revolver(Weapon):
 
         if self.in_reload:
             self.time_since_last_frame += delta_time
-            if self.time_since_last_frame >= self.animation_speed - 0.01:
+            if self.time_since_last_frame >= self.animation_speed:
                 self.reload_frame += 1
                 if self.reload_frame >= len(self.reload_textures):
                     self.in_reload = False

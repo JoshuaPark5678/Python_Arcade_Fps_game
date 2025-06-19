@@ -884,8 +884,8 @@ class FinalBoss(Enemy):
         self.max_minions = 5  # Max minions alive at once (phase 1, more)
         self.minion_type = 1  # 1: Enemy1, 2: Enemy2, 3: Enemy3
         self.radius = 2.5  # Larger collision for boss
-        self.health = 200
-        self.max_health = 200
+        self.health = 2500
+        self.max_health = 2500
         self.phase = 1
         self.stationary = True
         self.phase_transitioned = set()

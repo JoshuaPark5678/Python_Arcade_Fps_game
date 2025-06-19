@@ -35,9 +35,9 @@ class ShopScreenView(arcade.View):
         self.button_rects = []
         self.button_item_indices = []  # <-- Track mapping to self.items
         global_idx = 0
-        section_gap = 36
-        item_gap = 24
-        button_height = 56
+        section_gap = 32
+        item_gap = 18
+        button_height = 42
         button_width = panel_w - 80
         label_x = panel_x + 40
         # Health section
@@ -82,7 +82,7 @@ class ShopScreenView(arcade.View):
                 arcade.draw_xywh_rectangle_outline(bx, by, bw, bh, arcade.color.YELLOW if self.selected == global_idx or self._hover == global_idx else arcade.color.LIGHT_GRAY, 2)
                 icon_color = arcade.color.LIGHT_BLUE
                 arcade.draw_circle_filled(bx+24, by+bh//2, 14, icon_color)
-                arcade.draw_text(f"{item['name']}", bx+48, by+bh//2, arcade.color.WHITE, 16, anchor_y="center", font_name="Kenney Future")
+                arcade.draw_text(f"{item['name']}", bx+48, by+bh//2, arcade.color.WHITE, 12, anchor_y="center", font_name="Kenney Future")
                 arcade.draw_text(f"${item['price']}", bx+bw-16, by+bh//2, arcade.color.YELLOW, 16, anchor_y="center", anchor_x="right", font_name="Kenney Future")
                 self.button_rects.append((bx, by, bw, bh))
                 self.button_item_indices.append(self.items.index(item))
@@ -102,7 +102,7 @@ class ShopScreenView(arcade.View):
                 arcade.draw_xywh_rectangle_outline(bx, by, bw, bh, arcade.color.YELLOW if self.selected == global_idx or self._hover == global_idx else arcade.color.LIGHT_GRAY, 2)
                 icon_color = arcade.color.LIGHT_CORAL
                 arcade.draw_circle_filled(bx+24, by+bh//2, 14, icon_color)
-                arcade.draw_text(f"{item['name']}", bx+48, by+bh//2, arcade.color.WHITE, 16, anchor_y="center", font_name="Kenney Future")
+                arcade.draw_text(f"{item['name']}", bx+48, by+bh//2, arcade.color.WHITE, 12, anchor_y="center", font_name="Kenney Future")
                 arcade.draw_text(f"${item['price']}", bx+bw-16, by+bh//2, arcade.color.YELLOW, 16, anchor_y="center", anchor_x="right", font_name="Kenney Future")
                 self.button_rects.append((bx, by, bw, bh))
                 self.button_item_indices.append(self.items.index(item))
@@ -176,20 +176,31 @@ class ShopScreenView(arcade.View):
             player.currency -= item['price']
             # Apply item effect
             if item['name'] == 'Health +1':
-                player.max_health += 1
-                player.health = player.max_health
+                if hasattr(player, 'health'):
+                    if player.health < player.max_health:
+                        player.health += 1
+                    else:
+                        # give back money
+                        player.currency += item['price']
+                        return
             elif item['name'] == 'REVOLVER DMG+' and wm:
                 if hasattr(wm.weapons["REVOLVER"], "damage"):
                     wm.weapons["REVOLVER"].damage += 5
             elif item['name'] == 'SHOTGUN DMG+' and wm:
                 if hasattr(wm.weapons["SHOTGUN"], "damage"):
                     wm.weapons["SHOTGUN"].damage += 2
-            elif item['name'] == 'REVOLVER HS' and wm:
+            elif item['name'] == 'REVOLVER HS+' and wm:
                 if hasattr(wm.weapons["REVOLVER"], "HS_multiplier"):
                     wm.weapons["REVOLVER"].HS_multiplier += 0.5
-            elif item['name'] == 'SHOTGUN HS' and wm:
+            elif item['name'] == 'SHOTGUN HS+' and wm:
                 if hasattr(wm.weapons["SHOTGUN"], "HS_multiplier"):
                     wm.weapons["SHOTGUN"].HS_multiplier += 0.5
+            elif item['name'] == 'REVOLVER SPD+' and wm:
+                if hasattr(wm.weapons["REVOLVER"], "animations_speed"):
+                    wm.weapons["REVOLVER"].animations_speed = max(0.001, wm.weapons["REVOLVER"].animations_speed * 0.6)
+            elif item['name'] == 'SHOTGUN SPD+' and wm:
+                if hasattr(wm.weapons["SHOTGUN"], "animations_speed"):
+                    wm.weapons["SHOTGUN"].animations_speed = max(0.001, wm.weapons["SHOTGUN"].animations_speed * 0.6)
             # Scale price and count
             item['count'] += 1
             item['price'] = int(item['base_price'] * (1.5 ** item['count']))

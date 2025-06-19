@@ -476,8 +476,10 @@ class Game(arcade.Window):
             {"name": "Health +1", "base_price": 50, "price": 50, "count": 0},
             {"name": "REVOLVER DMG+", "base_price": 100, "price": 100, "count": 0},
             {"name": "SHOTGUN DMG+", "base_price": 100, "price": 100, "count": 0},
-            {"name": "REVOLVER HS", "base_price": 120, "price": 120, "count": 0},
-            {"name": "SHOTGUN HS", "base_price": 120, "price": 120, "count": 0},
+            {"name": "REVOLVER HS+", "base_price": 120, "price": 120, "count": 0},
+            {"name": "SHOTGUN HS+", "base_price": 120, "price": 120, "count": 0},
+            {"name": "REVOLVER RELOAD+", "base_price": 100, "price": 100, "count": 0},
+            {"name": "SHOTGUN RELOAD+", "base_price": 100, "price": 100, "count": 0},
         ]
 
         self.state = "TITLE"  # Add game state for title screen
@@ -1034,9 +1036,16 @@ class Game(arcade.Window):
 
             # display currency
             arcade.draw_ellipse_filled(
-                self.screen_width // 3, self.screen_height // 22, self.screen_width // 8, self.screen_height // 14, arcade.color.DARK_GRAY)
-            arcade.draw_text(f"Currency: {self.player.currency}", self.screen_width // 3, self.screen_height // 22,
+                self.screen_width // 3, self.screen_height // 22, self.screen_width // 8, self.screen_height // 14, arcade.color.BLACK)
+            arcade.draw_text(f"$: {self.player.currency}", self.screen_width // 3, self.screen_height // 22,
                              arcade.color.GREEN, 12, font_name="Kenney Future", anchor_x="center", anchor_y="center", bold=True)
+            
+            # display current level 
+            arcade.draw_xywh_rectangle_filled(
+                self.screen_width // 32, self.screen_height * 21 // 22, 140, self.screen_height // 24, arcade.color.DARK_GRAY)
+            arcade.draw_text(f"Level: {self.selected_level}", self.screen_width // 32 + 70, self.screen_height * 21 // 22 + 20,
+                             arcade.color.WHITE, 12, font_name="Kenney Future", anchor_x="center", anchor_y="center", bold=True)
+            
             # ======================MINIBOSS HEALTH====================== #
             minibosses = [enemy["object"] for enemy in self.enemies if hasattr(
                 enemy["object"], "__class__") and enemy["object"].__class__.__name__ == "Miniboss" and not enemy["object"].is_dead() and enemy.get("spawned")]  # Only show if spawned
@@ -1105,65 +1114,65 @@ class Game(arcade.Window):
                                  arcade.color.WHITE, 20, anchor_x="center", anchor_y="center", bold=True)
 
             # ========================GAME_INFO========================== #
+            if self.debugMode:
+                # Display camera position
+                arcade.draw_text(
+                    f"Camera Position: ({-self.camera_pos.x:.6f}, {-self.camera_pos.y:.6f}, {-self.camera_pos.z:.6f})",
+                    10,
+                    self.screen_height - 20,
+                    arcade.color.WHITE,
+                    12,
+                )
+                # Display camera position
+                arcade.draw_text(
+                    f"Camera Rotation: ({self.camera_rot.x:.6f}, {self.camera_rot.y:.6f}, {self.camera_rot.z:.6f})",
+                    10,
+                    self.screen_height - 40,
+                    arcade.color.WHITE,
+                    12,
+                )
+                # Display camera position
+                arcade.draw_text(
+                    f"Is Grounded: {self.is_on_ground}",
+                    10,
+                    self.screen_height - 60,
+                    arcade.color.WHITE,
+                    12,
+                )
+                # Display FPS
+                arcade.draw_text(
+                    f"FPS: {arcade.get_fps():.2f}",
+                    self.screen_width - 100,
+                    self.screen_height - 20,
+                    arcade.color.WHITE,
+                    12,
+                )
+                # display time
+                arcade.draw_text(
+                    f"Time: {self.time:.2f}",
+                    self.screen_width - 100,
+                    self.screen_height - 40,
+                    arcade.color.WHITE,
+                    12,
+                )
 
-            # Display camera position
-            arcade.draw_text(
-                f"Camera Position: ({-self.camera_pos.x:.6f}, {-self.camera_pos.y:.6f}, {-self.camera_pos.z:.6f})",
-                10,
-                self.screen_height - 20,
-                arcade.color.WHITE,
-                12,
-            )
-            # Display camera position
-            arcade.draw_text(
-                f"Camera Rotation: ({self.camera_rot.x:.6f}, {self.camera_rot.y:.6f}, {self.camera_rot.z:.6f})",
-                10,
-                self.screen_height - 40,
-                arcade.color.WHITE,
-                12,
-            )
-            # Display camera position
-            arcade.draw_text(
-                f"Is Grounded: {self.is_on_ground}",
-                10,
-                self.screen_height - 60,
-                arcade.color.WHITE,
-                12,
-            )
-            # Display FPS
-            arcade.draw_text(
-                f"FPS: {arcade.get_fps():.2f}",
-                self.screen_width - 100,
-                self.screen_height - 20,
-                arcade.color.WHITE,
-                12,
-            )
-            # display time
-            arcade.draw_text(
-                f"Time: {self.time:.2f}",
-                self.screen_width - 100,
-                self.screen_height - 40,
-                arcade.color.WHITE,
-                12,
-            )
+                # Display Current Speed (Acceleration)
+                arcade.draw_text(
+                    f"Current Speed: {self.current_speed:.2f}",
+                    10,
+                    self.screen_height - 80,
+                    arcade.color.WHITE,
+                    12,
+                )
 
-            # Display Current Speed (Acceleration)
-            arcade.draw_text(
-                f"Current Speed: {self.current_speed:.2f}",
-                10,
-                self.screen_height - 80,
-                arcade.color.WHITE,
-                12,
-            )
-
-            # is ads
-            arcade.draw_text(
-                f"Is ADS: {self.is_ADS}",
-                10,
-                self.screen_height - 100,
-                arcade.color.WHITE,
-                12,
-            )
+                # is ads
+                arcade.draw_text(
+                    f"Is ADS: {self.is_ADS}",
+                    10,
+                    self.screen_height - 100,
+                    arcade.color.WHITE,
+                    12,
+                )
         except Exception as e:
             print(f"Error drawing texture: {e}")
 
@@ -2169,6 +2178,7 @@ class Game(arcade.Window):
         self.walls.clear()
         self.doors.clear()
         self.exit_portal = None
+        self.selected_level = level
 
         # Load the new level
         self.load_level(level)

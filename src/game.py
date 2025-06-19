@@ -474,10 +474,10 @@ class Game(arcade.Window):
         # Persistent shop items for upgrades
         self.shop_items = [
             {"name": "Health +1", "base_price": 50, "price": 50, "count": 0},
-            {"name": "REVOLVER DMG Up", "base_price": 100, "price": 100, "count": 0},
-            {"name": "SHOTGUN DMG Up", "base_price": 100, "price": 100, "count": 0},
-            {"name": "REVOLVER HS Mult Up", "base_price": 120, "price": 120, "count": 0},
-            {"name": "SHOTGUN HS Mult Up", "base_price": 120, "price": 120, "count": 0},
+            {"name": "REVOLVER DMG+", "base_price": 100, "price": 100, "count": 0},
+            {"name": "SHOTGUN DMG+", "base_price": 100, "price": 100, "count": 0},
+            {"name": "REVOLVER HS", "base_price": 120, "price": 120, "count": 0},
+            {"name": "SHOTGUN HS", "base_price": 120, "price": 120, "count": 0},
         ]
 
         self.state = "TITLE"  # Add game state for title screen
@@ -716,6 +716,15 @@ class Game(arcade.Window):
                 # Rotate the object around the Y-axis
                 object_rotation_matrix = (Mat4.from_rotation(
                     obj["object"].get_rotation().y, (0, 1, 0)) - Mat4.from_translation(Vec3(0, 0, 0)))  # Rotate around Y-axis
+
+                # Compose rotation matrix using all axes (Y, X, Z)
+                rot = obj["object"].get_rotation()
+                object_rotation_matrix = (
+                    Mat4.from_rotation(rot.y, (0, 1, 0)) @
+                    Mat4.from_rotation(rot.x, (1, 0, 0)) @
+                    Mat4.from_rotation(rot.z, (0, 0, 1))
+                    - Mat4.from_translation(Vec3(0, 0, 0))
+                )
 
                 translation = (Mat4.from_translation(
                     self.camera_pos) @ Mat4.from_translation(obj["object"].get_world_position()))  # Get the world position of the object

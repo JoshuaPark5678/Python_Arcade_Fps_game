@@ -889,8 +889,8 @@ class FinalBoss(Enemy):
         self.phase = 1
         self.stationary = True
         self.phase_transitioned = set()
-        self.move_speed = 0.3  # Phase 3 movement speed
-        self.flee_speed = 3  # Phase 2 and 3 flee speed
+        self.move_speed = 0.2  # Phase 3 movement speed
+        self.flee_speed = 2  # Phase 2 and 3 flee speed
         self.target_pos = None
         self.last_move_time = time.time()
         self.move_cooldown = 0.01  # How often boss moves in phase 3
@@ -1029,15 +1029,44 @@ class FinalBoss(Enemy):
                     self.last_move_time = now
             # Face plant attack logic (phase 3 only)
             face_plant_range = 4.0
-            face_plant_cooldown = 5.0
+            face_plant_cooldown = 3.0  # Cooldown is now 3 seconds
+            face_plant_fall_time = 1.2  # Time to fall forward (seconds)
+            face_plant_stay_time = 3.0  # Time to stay face planted
+            face_plant_rise_time = 1.2  # Time to rise up (seconds)
             if not hasattr(self, 'last_face_plant_time'):
                 self.last_face_plant_time = 0
             if dist <= face_plant_range and (now - self.last_face_plant_time > face_plant_cooldown):
-                # Perform face plant attack
+                # Start face plant attack (falling forward)
                 print("FinalBoss: Face plant attack!")
-                if hasattr(self.player, 'apply_damage'):
-                    self.player.apply_damage(1)  # High damage
+                self.face_plant_animating = True
+                self.face_plant_anim_start = now
+                self.face_plant_damage_applied = False
                 self.last_face_plant_time = now
+            # Animate face plant (fall forward, stay, then rise up)
+            if hasattr(self, 'face_plant_animating') and self.face_plant_animating:
+                elapsed = now - getattr(self, 'face_plant_anim_start', 0)
+                if elapsed < face_plant_fall_time:
+                    # Animate z rotation from 0 to -1.2 radians over fall time
+                    self.rotation.x = -1.2 * (elapsed / face_plant_fall_time)
+                elif elapsed < face_plant_fall_time + face_plant_stay_time:
+                    self.rotation.x = -1.2
+                    # Only do damage at the very end of the fall
+                    if not getattr(self, 'face_plant_damage_applied', False):
+                        if hasattr(self.player, 'apply_damage'):
+                            self.player.apply_damage(1)  # High damage
+                        self.face_plant_damage_applied = True
+                elif elapsed < face_plant_fall_time + face_plant_stay_time + face_plant_rise_time:
+                    # Animate rising up from -1.2 to 0 radians
+                    rise_elapsed = elapsed - (face_plant_fall_time + face_plant_stay_time)
+                    self.rotation.z = -1.2 * (1 - (rise_elapsed / face_plant_rise_time))
+                else:
+                    self.rotation.z = 0  # Return upright
+                    self.face_plant_animating = False
+        # Animate face plant recovery
+        if hasattr(self, 'face_plant_animating') and self.face_plant_animating:
+            if now - getattr(self, 'face_plant_anim_start', 0) > 0.5:
+                self.rotation.x = 0  # Return upright
+                self.face_plant_animating = False
         # Optionally: add new attack patterns in phase 3
         # (e.g., area attack, projectile, etc.)
 

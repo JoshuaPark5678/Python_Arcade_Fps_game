@@ -59,7 +59,7 @@ class ShopScreenView(arcade.View):
                 icon_color = arcade.color.GREEN
                 arcade.draw_circle_filled(bx+24, by+bh//2, 14, icon_color)
                 # Item name/price
-                arcade.draw_text(f"{item['name']}", bx+48, by+bh//2, arcade.color.WHITE, 16, anchor_y="center", font_name="Kenney Future")
+                arcade.draw_text(f"{item['name']}", bx+48, by+bh//2, arcade.color.WHITE, 12, anchor_y="center", font_name="Kenney Future")
                 arcade.draw_text(f"${item['price']}", bx+bw-16, by+bh//2, arcade.color.YELLOW, 16, anchor_y="center", anchor_x="right", font_name="Kenney Future")
                 self.button_rects.append((bx, by, bw, bh))
                 # Map button to correct index in self.items
@@ -178,16 +178,16 @@ class ShopScreenView(arcade.View):
             if item['name'] == 'Health +1':
                 player.max_health += 1
                 player.health = player.max_health
-            elif item['name'] == 'REVOLVER DMG Up' and wm:
+            elif item['name'] == 'REVOLVER DMG+' and wm:
                 if hasattr(wm.weapons["REVOLVER"], "damage"):
                     wm.weapons["REVOLVER"].damage += 5
-            elif item['name'] == 'SHOTGUN DMG Up' and wm:
+            elif item['name'] == 'SHOTGUN DMG+' and wm:
                 if hasattr(wm.weapons["SHOTGUN"], "damage"):
                     wm.weapons["SHOTGUN"].damage += 2
-            elif item['name'] == 'REVOLVER HS Mult Up' and wm:
+            elif item['name'] == 'REVOLVER HS' and wm:
                 if hasattr(wm.weapons["REVOLVER"], "HS_multiplier"):
                     wm.weapons["REVOLVER"].HS_multiplier += 0.5
-            elif item['name'] == 'SHOTGUN HS Mult Up' and wm:
+            elif item['name'] == 'SHOTGUN HS' and wm:
                 if hasattr(wm.weapons["SHOTGUN"], "HS_multiplier"):
                     wm.weapons["SHOTGUN"].HS_multiplier += 0.5
             # Scale price and count
